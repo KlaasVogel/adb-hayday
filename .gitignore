@@ -13,6 +13,7 @@ platform-tools
 images/screen.png
 images/result.png
 
+
 # Distribution / packaging
 .Python
 build/

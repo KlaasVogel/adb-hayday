@@ -4,17 +4,40 @@ from time import sleep
 import cv2
 import numpy as np
 
+def correct(list1,list2):
+    print('correct')
+    newlist=[]
+    dx=list2[0][0]-list1[0][0]
+    dy=list2[0][1]-list1[0][1]
+    for x,y in list1:
+        newlist.append([x+dx,y+dy])
+    return newlist
+
+
+def get_dev(device):
+    print('getting info')
+    number=5
+    test=device.shell('getevent -p')
+    lines=test.split("\n")
+    for line in lines:
+        if "/dev/input" in line:
+            number=line[-1]
+        if "Touch" in line:
+            return f"sendevent /dev/input/event{number}"
+    return "sendevent /dev/input/event6"
+
+
 def move(device, x, y):
     print('moving')
     while (x or y):
         if x<0:
-            dx=x if x>-750 else -750
+            dx=x if x>-600 else -600
         else:
-            dx=x if x<750 else 750
+            dx=x if x<600 else 600
         if y<0:
-            dy=y if y>-350 else -350
+            dy=y if y>-300 else -300
         else:
-            dy=y if y<350 else 350
+            dy=y if y<300 else 300
         device.shell(f'input swipe {800+dx} {450+dy} 800 450 500')
         x=x-dx
         y=y-dy
