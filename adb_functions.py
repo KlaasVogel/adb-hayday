@@ -1,8 +1,20 @@
 from os import path
-from math import isclose
+from math import isclose,sqrt
 from time import sleep
 import cv2
 import numpy as np
+from ppadb.client import Client
+
+def load_adb():
+    adb= Client(host='127.0.0.1', port=5037)
+    print(adb.version())
+    devices = adb.devices()
+    if len(devices) == 0:
+        print("no devices")
+        quit()
+    device=devices[0]
+    dev=get_dev(device)
+    return {"adb":device, "dev":dev}
 
 def correct(list1,list2):
     print('correct')
@@ -43,7 +55,7 @@ def move(device, x, y):
         y=y-dy
 
 
-def locate_item(device,template_file,threshold):
+def locate_item(device,template_file,threshold,one=False):
     screencap = device.screencap()
 
     screenshot_file=path.join('images','screen.png')
@@ -57,7 +69,14 @@ def locate_item(device,template_file,threshold):
     w,h=template.shape[:-1]
 
     res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
+    if not threshold:
+        threshold=np.max(res)
+        print(f'max is {threshold}')
+        # cv2.imshow('Example - Show image in window',res)
+        # cv2.waitKey(0) # waits until a key is pressed
+        # cv2.destroyAllWindows() # destroys the window showing image
     loc = np.where(res >= threshold)
+    # print(loc)
     if len(loc[0]):
         loclist=[]
         for pt in zip(*loc[::-1]):  # Switch collumns and rows
@@ -70,7 +89,22 @@ def locate_item(device,template_file,threshold):
                 cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
                 loclist.append(pt)
         cv2.imwrite(result_file, img)
+        if one:
+            winner=loclist[0]
+            score=99999
+            for loc in loclist:
+                x,y=loc
+                newscore=(800-x)*(800-x)+(450-y)*(450-y)
+                if newscore<score:
+                    winner=[x,y]
+                    score=newscore
+            return winner
         return loclist
+    # else:
+    #     cv2.imshow('Template',template)
+    #     cv2.imshow('Example - Show image in window',res)
+    #     cv2.waitKey(0) # waits until a key is pressed
+    #     cv2.destroyAllWindows() # destroys the window showing image
     return []
     # for pt in zip(*loc[::-1]):  # Switch collumns and rows
     #     cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
