@@ -1,9 +1,9 @@
 
 from hd_objects import Crop, Production, Pen
 from tasks import Tasklist
-from adb_functions import load_adb
+from adb import Adb_Device
 
-device=load_adb()
+device=Adb_Device()
 tl=Tasklist()
 
 carrot=Crop(device, 'carrot', tl, growtime=10 , threshold=.55 , field=0, icon_x=375, icon_y=10, pos_x=-75 , pos_y=300)

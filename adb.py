@@ -5,16 +5,29 @@ import cv2
 import numpy as np
 from ppadb.client import Client
 
-def load_adb():
-    adb= Client(host='127.0.0.1', port=5037)
-    print(adb.version())
-    devices = adb.devices()
-    if len(devices) == 0:
-        print("no devices")
-        quit()
-    device=devices[0]
-    dev=get_dev(device)
-    return {"adb":device, "dev":dev}
+class Adb_Device():
+    def __init__(self):
+        client=Client(host='127.0.0.1', port=5037)
+        print(client.version())
+        devices = client.devices()
+        if len(devices) == 0:
+            print("no devices")
+            quit()
+        self.device=devices[0]
+        self.touch="/dev/input/event6"
+        self.res_x, self.res_y = [1600,900]
+        self.max=32767
+        print(f'updating info for {self.device}')
+        number=5
+        lines=self.device.shell('getevent -p').split("\n")
+        for line in lines:
+            if "/dev/input" in line:
+                number=line[-1]
+            if "Touch" in line:
+                self.touch=f"/dev/input/event{number}"
+
+
+
 
 def correct(list1,list2):
     print('correct')
@@ -27,16 +40,7 @@ def correct(list1,list2):
 
 
 def get_dev(device):
-    print('getting info')
-    number=5
-    test=device.shell('getevent -p')
-    lines=test.split("\n")
-    for line in lines:
-        if "/dev/input" in line:
-            number=line[-1]
-        if "Touch" in line:
-            return f"sendevent /dev/input/event{number}"
-    return "sendevent /dev/input/event6"
+
 
 
 def trace(device, dev, waypoints, size=0, pressure=0):
