@@ -39,6 +39,26 @@ def get_dev(device):
     return "sendevent /dev/input/event6"
 
 
+def trace(device, dev, waypoints, size=0, pressure=0):
+    eventlist=[]
+    for waypoint in waypoints:
+        x,y=waypoint
+        eventlist.append(f"{dev} 3 57 0")
+        eventlist.append(f"{dev} 3 53 {int(x*32767/1600)}")
+        eventlist.append(f"{dev} 3 54 {int(y*32767/900)}")
+        if size:
+            eventlist.append(f"{dev} 3 48 {size}")
+        if pressure:
+            eventlist.append(f"{dev} 3 58 {pressure}")
+        eventlist.append(f"{dev} 0 2 0")
+        eventlist.append(f"{dev} 0 0 0")
+    eventlist.append(f"{dev} 3 57 -1")
+    eventlist.append(f"{dev} 0 2 0")
+    eventlist.append(f"{dev} 0 0 0")
+    for event in eventlist:
+        device.shell(event)
+
+
 def move(device, x, y):
     print('moving')
     while (x or y):

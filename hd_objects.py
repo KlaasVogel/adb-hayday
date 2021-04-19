@@ -1,10 +1,10 @@
 from os import path
-from adb_functions import locate_item, move, get_dev, correct
+from adb_functions import locate_item, move, trace, get_dev, correct
 from math import isclose
 from time import sleep
 
 class HD():
-    def __init__(self,device,name,tasklist,threshold,rel_x,rel_y):
+    def __init__(self,device,name,tasklist,threshold,pos_x,pos_y):
         self.device=device["adb"]
         self.dev=device["dev"]
         self.name=name
@@ -14,13 +14,13 @@ class HD():
         self.image=file if path.isfile(file) else path.join('images','no_image.png')
         self.home=path.join('images','home.png')
         self.cross=path.join('images','X.png')
-        self.rel_x=rel_x
-        self.rel_y=rel_y
+        self.pos_x=pos_x
+        self.pos_y=pos_y
     def move_to(self):
-        move(self.device, self.rel_x, self.rel_y)
+        move(self.device, self.pos_x, self.pos_y)
         sleep(.2)
     def move_from(self):
-        move(self.device, -self.rel_x, -self.rel_y)
+        move(self.device, -self.pos_x, -self.pos_y)
     def check_full(self):
         locations=locate_item(self.device, self.cross,.45)
         if len(locations):
@@ -43,10 +43,9 @@ class HD():
             self.device.shell(f'input swipe {x} {y} 800 350 1000')
         return True
 
-
 class Production(HD):
-    def __init__(self, device, name, tasklist, threshold, icon_x, icon_y, rel_x=0, rel_y=0):
-        HD.__init__(self, device, name, tasklist, threshold, rel_x, rel_y)
+    def __init__(self, device, name, tasklist, threshold, icon_x, icon_y, pos_x=0, pos_y=0):
+        HD.__init__(self, device, name, tasklist, threshold, pos_x, pos_y)
         self.template=path.join('images',name,'base.png')
         self.table=path.join('images','table.png')
         self.icon=[icon_x,icon_y]
@@ -83,8 +82,8 @@ class Production(HD):
         self.tasklist.addtask(task["worktime"],nexttask["product"],nexttask["image"],self.produce)
 
 class Pen(HD):
-    def __init__(self, device, tasklist, animal, product, eattime, threshold, size, icon_x, icon_y, rel_x=0, rel_y=0):
-        HD.__init__(self, device, product, tasklist, threshold, rel_x, rel_y)
+    def __init__(self, device, tasklist, animal, product, eattime, threshold, size, icon_x, icon_y, pos_x=0, pos_y=0):
+        HD.__init__(self, device, product, tasklist, threshold, pos_x, pos_y)
         self.animal=animal
         self.icon=[icon_x,icon_y]
         self.eattime=eattime
@@ -104,71 +103,25 @@ class Pen(HD):
                 dx1=dx2-105
                 dy1=dy2+90
                 animals=locate_item(self.device, self.full,.55)
-                if not animals:
-                    self.spiral(self.size, x+dx1, y+dy1, x, y)
-                    self.check_full()
-                    sleep(.5)
-                    self.device.shell(f'input tap {x+50} {y+50}')
-                    sleep(.2)
-                    self.spiral(self.size, x+dx2, y+dy2, x, y)
-                else:
-                    self.swipe_animal(x+dx1,y+dy1,animals)
+                if animals:
+                    self.swipe_animal(x+dx1,y+dy1,animals,dy=50)
                     sleep(2)
                     self.check_full()
                     self.swipe_animal(x+dx2,y+dy2,animals)
             self.move_from()
         self.tasklist.addtask(self.eattime, self.animal, self.image, self.collect)
 
-    def swipe_animal(self,x,y,list):
-        eventlist=[
-            f"{self.dev} 3 57 0",
-            f"{self.dev} 3 53 {int(x*32767/1600)}",
-            f"{self.dev} 3 54 {int(y*32767/900)}",
-            f"{self.dev} 0 2 0",
-            f"{self.dev} 0 0 0"]
-        for animal in list:
-            eventlist.append(f"{self.dev} 3 57 0")
-            eventlist.append(f"{self.dev} 3 53 {int(animal[0]*32767/1600)}")
-            eventlist.append(f"{self.dev} 3 54 {int((animal[1]+50)*32767/900)}")
-            eventlist.append(f"{self.dev} 3 48 20")
-            eventlist.append(f"{self.dev} 3 58 100")
-            eventlist.append(f"{self.dev} 0 2 0")
-            eventlist.append(f"{self.dev} 0 0 0")
-        eventlist.append(f"{self.dev} 3 57 -1")
-        eventlist.append(f"{self.dev} 0 2 0")
-        eventlist.append(f"{self.dev} 0 0 0")
-        for event in eventlist:
-            # print(event)
-            self.device.shell(event)
-
-    def spiral(self,size,start_x,start_y,x,y):
-        print(size,x,y)
-        eventlist=[
-            f"{self.dev} 3 57 0",
-            f"{self.dev} 3 53 {int(start_x*32767/1600)}",
-            f"{self.dev} 3 54 {int(start_y*32767/900)}",
-            f"{self.dev} 0 2 0",
-            f"{self.dev} 0 0 0"]
-        # f"{self.dev} 3 57 0",f"{self.dev} 3 53 {int((x)*32767/1600)}",f"{self.dev} 3 54 {int((y)*32767/900)}",f"{self.dev} 0 2 0", f"{self.dev} 0 0 0",f"{self.dev} 3 57 -1",f"{self.dev} 0 2 0",f"{self.dev} 0 0 0",
-        for dx in range(6):
-            for dy in range(5):
-                eventlist.append(f"{self.dev} 3 57 0")
-                eventlist.append(f"{self.dev} 3 53 {int((x+dx*size*0.3)*32767/1600)}")
-                eventlist.append(f"{self.dev} 3 54 {int((y+dy*size/4)*32767/900)}")
-                eventlist.append(f"{self.dev} 0 2 0")
-                eventlist.append(f"{self.dev} 0 0 0")
-        eventlist.append(f"{self.dev} 3 57 -1")
-        eventlist.append(f"{self.dev} 0 2 0")
-        eventlist.append(f"{self.dev} 0 0 0")
-        for event in eventlist:
-            # print(event)
-            self.device.shell(event)
-
+    def swipe_animal(self,x,y,list,dx=0,dy=0):
+        waypoints=[[x,y]]
+        for location in list:
+            x,y = location
+            waypoints.append([x+dx, y+dy])
+        trace(self.device,self.dev, waypoints, size=20, pressure=100)
 
 
 class Crop(HD):
-    def __init__(self, device, name, tasklist, growtime, threshold, icon_x, icon_y, field=0, second_menu=False, rel_x=0, rel_y=0):
-        HD.__init__(self, device, name, tasklist, threshold, rel_x, rel_y)
+    def __init__(self, device, name, tasklist, growtime, threshold, icon_x, icon_y, field=0, second_menu=False, pos_x=0, pos_y=0):
+        HD.__init__(self, device, name, tasklist, threshold, pos_x, pos_y)
         self.growtime=growtime
         self.icon=[icon_x,icon_y]
         self.fullcrop=path.join('images','crops',f'{name}.png')
