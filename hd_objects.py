@@ -1,12 +1,10 @@
 from os import path
-from adb_functions import locate_item, move, trace, get_dev, correct
 from math import isclose
 from time import sleep
 
 class HD():
     def __init__(self,device,name,tasklist,threshold,pos_x,pos_y):
-        self.device=device["adb"]
-        self.dev=device["dev"]
+        self.device=device
         self.name=name
         self.tasklist=tasklist
         self.threshold=threshold

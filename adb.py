@@ -19,15 +19,20 @@ class Adb_Device():
         self.max=32767
         print(f'updating info for {self.device}')
         number=5
+        touch_id=0
         lines=self.device.shell('getevent -p').split("\n")
         for line in lines:
             if "/dev/input" in line:
                 number=line[-1]
             if "Touch" in line:
+                touch_id=number
                 self.touch=f"/dev/input/event{number}"
-
-
-
+            if "max" in line and "ABS" in line and number==touch_id:
+                values=line.split(', ')
+                for value in values:
+                    if "max" in value:
+                        self.max=int(value[4:])
+                        print(f"found max: {self.max}")
 
 def correct(list1,list2):
     print('correct')
@@ -37,11 +42,6 @@ def correct(list1,list2):
     for x,y in list1:
         newlist.append([x+dx,y+dy])
     return newlist
-
-
-def get_dev(device):
-
-
 
 def trace(device, dev, waypoints, size=0, pressure=0):
     eventlist=[]

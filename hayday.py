@@ -22,7 +22,4 @@ mill1.add(product='chicken feed', worktime=5, icon_x=0, icon_y=-250, second_menu
 
 coop=Pen(device, tl, animal='chicken', product='egg', eattime=20, threshold=.7, size=300, icon_x=0, icon_y=-100, pos_x=-1000, pos_y=200)
 
-tl.start()
-#wheat.harvest()
-#corn.harvest()
-#soy.harvest()
+# tl.start()

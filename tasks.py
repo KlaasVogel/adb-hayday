@@ -47,12 +47,13 @@ class Tasklist(dict):
                 cls()
                 print ('program is running, press "END" to stop')
                 cur_time=int(time())
-                firsttask=sorted(self)[0]
-                if firsttask<=cur_time and not self.busy:
-                    task=self.pop(firsttask)
-                    self.busy=True
-                    task['job']()
-                    self.busy=False
+                if not paused:
+                    firsttask=sorted(self)[0]
+                    if firsttask<=cur_time and not self.busy:
+                        task=self.pop(firsttask)
+                        self.busy=True
+                        task['job']()
+                        self.busy=False
                 self.printlist()
                 sleep(1)
             listener.join()
