@@ -1,13 +1,14 @@
 
-from hd_objects import Crop, Production, Pen
+from hd_objects import Crops, Production, Pen
 from tasks import Tasklist
 from adb import Adb_Device
-
-device=Adb_Device()
-tl=Tasklist()
+import tkinter as tk
 
 
-device.zoom_out()
+
+
+# test=Crop(device, 'test', tl, growtime=2 , threshold=.85 , field=0, icon_x=125, icon_y=160, pos_x=100 , pos_y=600)
+#device.zoom_out()
 # wheat=Crop(device, 'wheat', tl, growtime=2 , threshold=.85 , field=0, icon_x=125, icon_y=160, pos_x=100 , pos_y=600)
 # carrot=Crop(device, 'carrot', tl, growtime=10 , threshold=.55 , field=0, icon_x=375, icon_y=10, pos_x=-75 , pos_y=300)
 # corn=Crop(device, 'corn', tl , growtime=5 , threshold=.8 , field=1, icon_x=200, icon_y=25, pos_x=-400 , pos_y=550)
@@ -25,3 +26,14 @@ device.zoom_out()
 # coop=Pen(device, tl, animal='chicken', product='egg', eattime=20, threshold=.7, size=300, icon_x=0, icon_y=-100, pos_x=-1000, pos_y=200)
 
 # tl.start()
+
+class MainFrame(tk.Frame):
+    device=Adb_Device()
+    tl=Tasklist()
+    crops=Crops(t)
+    def __init__(self,parent):
+        test=Crop(device, 'test', tl, growtime=2 , threshold=.85 , field=0, icon_x=125, icon_y=160, pos_x=100 , pos_y=600)
+
+if __name__ == "__main__":
+    app = MainApp()
+    app.mainloop()

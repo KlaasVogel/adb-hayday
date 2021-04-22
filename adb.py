@@ -71,9 +71,9 @@ class Adb_Device():
         x_c=.5
         dx=0.25
         steps=[]
-        for i in range(20):
-            x1=x_c-dx*(20-i)/20
-            x2=x_c+dx*(20-i)/20
+        for i in range(10):
+            x1=x_c-dx*(10-i)/11
+            x2=x_c+dx*(10-i)/11
             steps.append(f"{self.touch} 3 57 0")
             steps.append(f"{self.touch} 3 53 {int(x1*self.max)}")
             steps.append(f"{self.touch} 3 54 {int(y*self.max)}")
@@ -83,8 +83,8 @@ class Adb_Device():
             steps.append(f"{self.touch} 3 54 {int(y*self.max)}")
             steps.append(f"{self.touch} 0 2 0")
             steps.append(f"{self.touch} 0 0 0")
-            shellcmd=" ".join(steps)
-            self.device.shell(shellcmd)
+        shellcmd=" && ".join(steps)
+        self.device.shell(shellcmd)
         self.release_all()
         self.release_all()
 

@@ -30,6 +30,7 @@ class HD():
         print('cleaning')
         locations=locate_item(self.device, self.home,.9)
         if not len(locations):
+            self.device.zoom_out()
             print('ohoh...no home?')
             for x in range(4):
                 self.device.shell('input swipe 200 150 1300 700 100')
@@ -38,7 +39,10 @@ class HD():
             if not len(locations):
                 return False
         x,y=locations[0]
-        if not (isclose(x,800,abs_tol=50) and isclose(y,350,abs_tol=50)):
+        if not self.check_zoom():
+            self.device.zoom_out()
+            locations=locate_item(self.device, self.home,.9)
+        if not (isclose(x,800,abs_tol=40) and isclose(y,350,abs_tol=40)):
             self.device.shell(f'input swipe {x} {y} 800 350 1000')
         return True
 
