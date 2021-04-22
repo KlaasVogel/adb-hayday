@@ -20,8 +20,6 @@ class HD():
         sleep(.2)
     def move_from(self):
         move(self.device, -self.pos_x, -self.pos_y)
-    def load_templates(self, map, name):
-        
     def check_full(self):
         locations=locate_item(self.device, self.cross,.45)
         if len(locations):

@@ -5,7 +5,28 @@ import cv2
 import numpy as np
 from ppadb.client import Client
 
+class Template():
+    offset=[0,0]
+    w,h=[0,0]
+    data=[]
+    def __init__(self, file):
+        if path.isfile(file):
+            self.data= cv2.imread(template_file)
+            self.w,self.h=template.shape[:-1]
+            if "_C" in template_file:
+                self.offset=[w/2,h/2]
+            if "_R" in template_file:
+                self.offset[0]=self.w
+            if "O_" in template_file:
+                self.offset[1]=self.h
+
+
 class Adb_Device():
+    device=None
+    touch="/dev/input/event6"
+    res_x, res_y= [1600,900]
+    max=32767
+
     def __init__(self):
         client=Client(host='127.0.0.1', port=5037)
         print(client.version())
@@ -14,9 +35,6 @@ class Adb_Device():
             print("no devices")
             quit()
         self.device=devices[0]
-        self.touch="/dev/input/event6"
-        self.res_x, self.res_y = [1600,900]
-        self.max=32767
         print(f'updating info for {self.device}')
         number=5
         touch_id=0
@@ -26,7 +44,7 @@ class Adb_Device():
                 number=line[-1]
             if "Touch" in line:
                 touch_id=number
-                self.touch=f"/dev/input/event{number}"
+                self.touch=f"sendevent /dev/input/event{number}"
             if "max" in line and "ABS" in line and number==touch_id:
                 values=line.split(', ')
                 for value in values:
@@ -34,9 +52,7 @@ class Adb_Device():
                         self.max=int(value[4:])
                         print(f"found max: {self.max}")
 
-    def load_template()
-
-    @method
+    @staticmethod
     def correct(list1,list2):
         print('correct')
         newlist=[]
@@ -45,6 +61,32 @@ class Adb_Device():
         for x,y in list1:
             newlist.append([x+dx,y+dy])
         return newlist
+
+    def release_all(self):
+        shellcmd= f"{self.touch} 3 57 -1  && {self.touch} 0 2 0 && {self.touch} 0 0 0"
+        self.device.shell(shellcmd)
+
+    def zoom_out(self):
+        y=0.35
+        x_c=.5
+        dx=0.25
+        steps=[]
+        for i in range(20):
+            x1=x_c-dx*(20-i)/20
+            x2=x_c+dx*(20-i)/20
+            steps.append(f"{self.touch} 3 57 0")
+            steps.append(f"{self.touch} 3 53 {int(x1*self.max)}")
+            steps.append(f"{self.touch} 3 54 {int(y*self.max)}")
+            steps.append(f"{self.touch} 0 2 0")
+            steps.append(f"{self.touch} 3 57 1")
+            steps.append(f"{self.touch} 3 53 {int(x2*self.max)}")
+            steps.append(f"{self.touch} 3 54 {int(y*self.max)}")
+            steps.append(f"{self.touch} 0 2 0")
+            steps.append(f"{self.touch} 0 0 0")
+            shellcmd=" ".join(steps)
+            self.device.shell(shellcmd)
+        self.release_all()
+        self.release_all()
 
     def trace(self, waypoints, size=0, pressure=0):
         eventlist=[]
@@ -62,9 +104,11 @@ class Adb_Device():
         eventlist.append(f"{self.touch} 3 57 -1")
         eventlist.append(f"{self.touch} 0 2 0")
         eventlist.append(f"{self.touch} 0 0 0")
-        for event in eventlist:
-            self.device.shell(event)
-
+        # for event in eventlist:
+        #     self.device.shell(event)
+        shellcmd=" & ".join(eventlist)
+        print(shellcmd)
+        # self.device.shell(shellcmd)
 
     def move(self, x, y):
         print('moving')
@@ -85,7 +129,7 @@ class Adb_Device():
 
     def locate_item(self,templates,threshold=0.75,margin=0.15,one=False,show=True):
         screencap = device.screencap()
-        screenshot_file=path.join('images','screen.png')
+        # screenshot_file=path.join('images','screen.png')
         result_file=path.join('images','result.png')
         loclist=[]
 
@@ -96,18 +140,8 @@ class Adb_Device():
         # img=cv2.imread(screenshot_file)
         img_array=np.array(screencap)
         img=cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
-        for template_file in templates:
-            if path.isfile(template_file):
-                template= cv2.imread(template_file)
-                w,h=template.shape[:-1]
-                offset=[0,0]
-                if "_C" in template_file:
-                    offset=[w/2,h/2]
-                if "_R" in template_file:
-                    offset[0]=w
-                if "O_" in template_file:
-                    offset[1]=h
-                result = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
+        for template in templates:
+                result = cv2.matchTemplate(img, template.data, cv2.TM_CCOEFF_NORMED)
                 max=np.max(result)
                 if (max>=threshold):
                     min=max-margin if (max-margin >= threshold) else threshold
@@ -115,19 +149,19 @@ class Adb_Device():
                     if len(loc[0]):
                         for pt in zip(*loc[::-1]):  # Switch collumns and rows
                             for location in loclist:
-                                x,y=np.add(pt,offset)
+                                x,y=np.add(pt,template.offset)
                                 print(pt)
                                 print(x,y)
                                 sleep(10)
                                 if not (isclose(x, location[0], abs_tol=90) and isclose(y, location[1], abs_tol=40)):
                                     print(f"found on {x},{y} ")
-                                    cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
+                                    cv2.rectangle(img, pt, (pt[0] + template.w, pt[1] + template.h), (0, 0, 255), 2)
                                     cv2.circle(img, (x,y), 10, (0,255,0), -1)
                                     loclist.append([x,y])
-        cv2.imwrite(result_file, img)
+        # cv2.imwrite(result_file, img)
         if show:
             # cv2.imshow('Template',template)
-            cv2.imshow('Example - Show image in window',result)
+            cv2.imshow('Example - Show image in window',img)
             # cv2.waitKey(0) # waits until a key is pressed
             # cv2.destroyAllWindows() # destroys the window showing image
         if one:
