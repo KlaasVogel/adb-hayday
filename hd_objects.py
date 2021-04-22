@@ -1,6 +1,7 @@
 from os import path
 from math import isclose
 from time import sleep
+from glob import glob
 
 class HD():
     def __init__(self,device,name,tasklist,threshold,pos_x,pos_y):
@@ -19,6 +20,8 @@ class HD():
         sleep(.2)
     def move_from(self):
         move(self.device, -self.pos_x, -self.pos_y)
+    def load_templates(self, map, name):
+        
     def check_full(self):
         locations=locate_item(self.device, self.cross,.45)
         if len(locations):
