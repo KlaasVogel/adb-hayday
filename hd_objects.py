@@ -121,6 +121,15 @@ class Pen(HD):
             waypoints.append([x+dx, y+dy])
         trace(self.device,self.dev, waypoints, size=20, pressure=100)
 
+class Crops(list):
+    device=None
+    tasklist=None
+    def __init__(self, device, tasklist):
+        self.device=device
+        self.takslist=tasklist
+    def add(self, name, growtime, threshold=0.6, pos_x=0, pos_y=0):
+        self.append(Crop(self.device, self.tasklist, ))
+
 
 class Crop(HD):
     def __init__(self, device, name, tasklist, growtime, threshold, icon_x, icon_y, field=0, second_menu=False, pos_x=0, pos_y=0):

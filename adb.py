@@ -101,13 +101,11 @@ class Adb_Device():
                 eventlist.append(f"{self.touch} 3 58 {pressure}")
             eventlist.append(f"{self.touch} 0 2 0")
             eventlist.append(f"{self.touch} 0 0 0")
-        eventlist.append(f"{self.touch} 3 57 -1")
-        eventlist.append(f"{self.touch} 0 2 0")
-        eventlist.append(f"{self.touch} 0 0 0")
         # for event in eventlist:
         #     self.device.shell(event)
         shellcmd=" & ".join(eventlist)
-        print(shellcmd)
+        self.device.shell(shellcmd)
+        self.release_all()
         # self.device.shell(shellcmd)
 
     def move(self, x, y):
