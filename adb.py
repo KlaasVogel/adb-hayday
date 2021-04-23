@@ -87,6 +87,16 @@ class Adb_Device():
         self.device.shell(shellcmd)
         self.release_all()
         self.release_all()
+        # cmd=f"{self.touch} 3 57 2 && {self.touch} 3 53 {int((x_c-dx)*self.max)} && {self.touch} 3 54 {int(y*self.max)}"
+        # self.device.shell(cmd)
+        # self.device.shell(f"input swipe {(x_c+dx)*self.res_x} {(y)*self.res_y} {(x_c-dx)*self.res_x} {(y)*self.res_y} 2000")
+        # self.release_all()
+        # self.release_all()
+
+
+
+    def show(self):
+        return False
 
     def trace(self, waypoints, size=0, pressure=0):
         eventlist=[]
@@ -157,7 +167,7 @@ class Adb_Device():
                                     cv2.circle(img, (x,y), 10, (0,255,0), -1)
                                     loclist.append([x,y])
         # cv2.imwrite(result_file, img)
-        if show:
+        if self.show():
             # cv2.imshow('Template',template)
             cv2.imshow('Example - Show image in window',img)
             # cv2.waitKey(0) # waits until a key is pressed

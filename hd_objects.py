@@ -124,15 +124,20 @@ class Pen(HD):
 class Crops(list):
     device=None
     tasklist=None
+    wheat={'growtime':2, 'threshold':.85, 'field':0, 'icon_x':3, 'icon_y':4}
+    corn={'growtime':5, 'threshold':.85, 'field':1, 'icon_x':3, 'icon_y':4}
+    carrot={'growtime':10, 'threshold':.85, 'field':0, 'icon_x':3, 'icon_y':4}
+    soy={'growtime':20, 'threshold':.85, 'field':0, 'icon_x':3, 'icon_y':4}
     def __init__(self, device, tasklist):
         self.device=device
-        self.takslist=tasklist
-    def add(self, name, growtime, threshold=0.6, pos_x=0, pos_y=0):
-        self.append(Crop(self.device, self.tasklist, ))
-
+        self.tasklist=tasklist
+    def add(self, name, threshold=None, pos_x=0, pos_y=0):
+        if hasattr(self,name):
+            data=getattr(self,name)
+            self.append(Crop(self.device, name, self.tasklist, data['growtime'], data['threshold'], data['icon_x'], data['icon_x'], data['field'], pos_x, pos_y))
 
 class Crop(HD):
-    def __init__(self, device, name, tasklist, growtime, threshold, icon_x, icon_y, field=0, second_menu=False, pos_x=0, pos_y=0):
+    def __init__(self, device, name, tasklist, growtime, threshold, icon_x, icon_y, field=0, pos_x=0, pos_y=0):
         HD.__init__(self, device, name, tasklist, threshold, pos_x, pos_y)
         self.growtime=growtime
         self.icon=[icon_x,icon_y]

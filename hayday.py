@@ -2,8 +2,7 @@
 from hd_objects import Crops, Production, Pen
 from tasks import Tasklist
 from adb import Adb_Device
-import tkinter as tk
-
+from tkinter import Tk, Frame, Label
 
 
 
@@ -27,12 +26,15 @@ import tkinter as tk
 
 # tl.start()
 
-class MainFrame(tk.Frame):
+class MainApp(Tk):
     device=Adb_Device()
     tl=Tasklist()
-    crops=Crops(t)
-    def __init__(self,parent):
-        test=Crop(device, 'test', tl, growtime=2 , threshold=.85 , field=0, icon_x=125, icon_y=160, pos_x=100 , pos_y=600)
+    crops=Crops(device, tl)
+    def __init__(self):
+        self.root = Tk.__init__(self)
+        self.crops.add('wheat', -1, 5)
+        self.device.zoom_out()
+        # self.tl.start()
 
 if __name__ == "__main__":
     app = MainApp()
