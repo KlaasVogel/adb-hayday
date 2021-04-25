@@ -1,9 +1,12 @@
-from os import path
+from os import path, getcwd
 from math import isclose
 from time import sleep
 from glob import glob
+from adb import Template
 
 class HD():
+    home=[Template(path.join('images','home_C.png'))]
+    cross=[Template(path.join('images','X.png'))]
     def __init__(self,device,name,tasklist,threshold,pos_x,pos_y):
         self.device=device
         self.name=name
@@ -11,8 +14,6 @@ class HD():
         self.threshold=threshold
         file=path.join('images','products',f'{name}.png')
         self.image=file if path.isfile(file) else path.join('images','no_image.png')
-        self.home=path.join('images','home.png')
-        self.cross=path.join('images','X.png')
         self.pos_x=pos_x
         self.pos_y=pos_y
     def move_to(self):
@@ -21,30 +22,85 @@ class HD():
     def move_from(self):
         move(self.device, -self.pos_x, -self.pos_y)
     def check_full(self):
-        locations=locate_item(self.device, self.cross,.45)
+        locations=self.device.locate_item(self.cross,.45)
         if len(locations):
             x,y=locations[0]
-            self.device.shell(f'input tap {x} {y}')
+            self.device.tap(x,y)
             sleep(1)
+            return True
+        return False
+    def open(self, location):
+        x,y=location
+        self.device.tap(x,y)
+        sleep(.1)
+        if not self.check_open():
+            self.device.tap(x,y)
+            sleep(.1)
+            if not self.check_open():
+                self.tasklist.addtask(5,'board',self.image,self.check)
+                return False
+        return True
+    def check_open(self):
+        locations=self.device.locate_item(self.cross,.45)
+        if len(locations):
+            return True
+        return False
     def reset_screen(self):
         print('cleaning')
-        locations=locate_item(self.device, self.home,.9)
+        locations=self.device.locate_item(self.home,.9)
         if not len(locations):
-            self.device.zoom_out()
-            print('ohoh...no home?')
-            for x in range(4):
-                self.device.shell('input swipe 200 150 1300 700 100')
-            move(self.device,2900,1000)
-            locations=locate_item(self.device, self.home,.9)
+            if not self.check_full():
+                for x in range(4):
+                    self.device.swipe(200,150,1300,700,100)
+                self.device.zoom_out()
+                self.device.swipe(1300,300,700,300,400)
+            locations=self.device.locate_item(self.home,.9)
             if not len(locations):
+                print('ohoh...no home?')
                 return False
         x,y=locations[0]
-        if not self.check_zoom():
-            self.device.zoom_out()
-            locations=locate_item(self.device, self.home,.9)
         if not (isclose(x,800,abs_tol=40) and isclose(y,350,abs_tol=40)):
-            self.device.shell(f'input swipe {x} {y} 800 350 1000')
+            self.device.swipe(x,y,800,350,1000)
+        sleep(.1)
         return True
+
+
+class Board(HD):
+    def __init__(self, device, tasklist):
+        self.device=device
+        self.tasklist=tasklist
+        self.image=path.join('images','board','car_button_C.png')
+        self.base_template=[Template(path.join('images','board','base_TR_.png'))]
+        self.complete_template=[Template(path.join('images','board','check_CR_.png'))]
+        self.card_template=[Template(path.join('images','board','pins_C_B.png'))]
+        self.icon=[1335,775]
+        self.cards=[[290,290],[535,290],[775,290],
+                    [290,520],[535,520],[775,520],
+                    [290,730]]
+        self.tasks=[]
+        self.tasklist.addtask(.1,'board',self.image,self.check)
+
+    def check(self):
+        print('checking board')
+        nextcheck=1
+        if self.reset_screen():
+            location=self.device.locate_item(self.base_template,.9, one=True)
+            if len(location) and self.open(location):
+                checks=self.device.locate_item(self.complete_template,.9)
+                if len(checks):
+                    x,y=checks[0]
+                    self.device.tap(x,y)
+                    sleep(.2)
+                    x,y=self.icon
+                    self.device.tap(x,y)
+                    nextcheck=.2
+                else:
+                    print('update board info')
+
+
+            nextcheck=5
+        self.tasklist.addtask(nextcheck,'board',self.image,self.check)
+
 
 class Production(HD):
     def __init__(self, device, name, tasklist, threshold, icon_x, icon_y, pos_x=0, pos_y=0):
@@ -124,59 +180,85 @@ class Pen(HD):
 class Crops(list):
     device=None
     tasklist=None
-    wheat={'growtime':2, 'threshold':.85, 'field':0, 'icon_x':3, 'icon_y':4}
+    wheat={'growtime':2, 'threshold':.85, 'field':0, 'icon_x':-125, 'icon_y':-150}
     corn={'growtime':5, 'threshold':.85, 'field':1, 'icon_x':3, 'icon_y':4}
     carrot={'growtime':10, 'threshold':.85, 'field':0, 'icon_x':3, 'icon_y':4}
     soy={'growtime':20, 'threshold':.85, 'field':0, 'icon_x':3, 'icon_y':4}
+    templates={}
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist
-    def add(self, name, threshold=None, pos_x=0, pos_y=0):
+    def add(self, name, amount=1, threshold=None, pos_x=0, pos_y=0):
         if hasattr(self,name):
+            self.loadTemplates(name)
             data=getattr(self,name)
-            self.append(Crop(self.device, name, self.tasklist, data['growtime'], data['threshold'], data['icon_x'], data['icon_x'], data['field'], pos_x, pos_y))
+            self.append(Crop(self.device, name, amount, self.tasklist, data['growtime'], data['threshold'], data['icon_x'], data['icon_x'], data['field'], self.templates[name], pos_x, pos_y))
+    def loadTemplates(self, name):
+        if name not in self.templates:
+            list=[]
+            filelist=glob(path.join(getcwd(),'images', 'crops',f'{name}*.png'))
+            for file in filelist:
+                list.append(Template(file))
+                print(list[-1])
+            self.templates[name]=list
 
 class Crop(HD):
-    def __init__(self, device, name, tasklist, growtime, threshold, icon_x, icon_y, field=0, pos_x=0, pos_y=0):
+    fields=[]
+    for i in range(2):
+        list=[]
+        glob_query=path.join('images', 'crops', f'empty_{i}*.png')
+        glob_result=glob(glob_query)
+        for file in glob_result:
+            list.append(Template(file))
+        fields.append(list)
+    def __init__(self, device, name, amount, tasklist, growtime, threshold, icon_x, icon_y, field=0, templates=[], pos_x=0, pos_y=0):
         HD.__init__(self, device, name, tasklist, threshold, pos_x, pos_y)
         self.growtime=growtime
+        self.amount=amount
         self.icon=[icon_x,icon_y]
-        self.fullcrop=path.join('images','crops',f'{name}.png')
-        self.crop_selected=path.join('images','crops',f'{name}_select.png')
-        self.field=path.join('images','crops',f'empty_{field}.png')
-        self.field_selected=path.join('images','crops', f'empty_select_{field}.png')
-        self.tasklist.addtask(.2,self.name,self.image,self.harvest)
+        self.templates=templates
+        self.field_templates=self.fields[field]
+        self.scheduled=False
+        # self.crop_selected=path.join('images','crops',f'{name}_select.png')
+        # self.field=path.join('images','crops',f'empty_{field}.png')
+        # self.field_selected=path.join('images','crops', f'empty_select_{field}.png')
+        self.tasklist.addtask(.1,self.name,self.image,self.harvest)
 
-    def tap_and_click(self, locations, item_x, item_y):
-        print('tap and click')
+    def tap_and_trace(self, locations, item_x=-130, item_y=-40):
+        print('tap and trace')
         x,y=locations[0]
-        self.device.shell(f'input tap {x} {y}')
-        # print(f'tap {x} {y}')
-        sleep(.2)
-        self.click(locations, item_x, item_y)
+        self.device.tap(x,y)
+        waypoints=[[x+item_x,y+item_y]]+locations
+        print(waypoints)
+        self.device.trace(waypoints)
+        sleep(.5)
 
-    def click(self, locations, item_x, item_y):
-        x,y=locations[0]
-        eventlist=[# f"{self.dev} 3 57 0",f"{self.dev} 3 53 {int((x)*32767/1600)}",f"{self.dev} 3 54 {int((y)*32767/900)}",f"{self.dev} 0 2 0", f"{self.dev} 0 0 0",f"{self.dev} 3 57 -1",f"{self.dev} 0 2 0",f"{self.dev} 0 0 0",
-        f"{self.dev} 3 57 0",f"{self.dev} 3 53 {int((x-item_x)*32767/1600)}",f"{self.dev} 3 54 {int((y-item_y)*32767/900)}",f"{self.dev} 0 2 0", f"{self.dev} 0 0 0"]
-        for location in locations:
-            X,Y=location
-            x=int((X)*32767/1600)
-            y=int((Y)*32767/900)
-            # print(X,Y,x,y)
-            eventlist.append(f"{self.dev} 3 57 0")
-            eventlist.append(f"{self.dev} 3 53 {x}")
-            eventlist.append(f"{self.dev} 3 54 {y}")
-            eventlist.append(f"{self.dev} 0 2 0")
-            eventlist.append(f"{self.dev} 0 0 0")
-        eventlist.append(f"{self.dev} 3 57 -1")
-        eventlist.append(f"{self.dev} 0 2 0")
-        eventlist.append(f"{self.dev} 0 0 0")
-        for event in eventlist:
-            # print(event)
-            self.device.shell(event)
+    def sow(self):
+        print('sowing')
+        empty_fields=self.device.locate_item(self.field_templates, .85)
+        print(empty_fields)
+        sleep(5)
 
     def harvest(self):
+        if self.reset_screen():
+            fields=self.device.locate_item(self.templates, threshold=self.threshold)
+            if len(fields):
+                self.tap_and_trace(fields)
+                sleep(1)
+                full = self.check_full()
+                self.sow()
+                self.tasklist.updateWish(self.name, -len(fields))
+                if not full and self.tasklist.checkWish(self.name):
+                    self.tasklist.addtask(self.growtime,self.name,self.image,self.harvest)
+                    self.scheduled=True
+                    return
+            self.scheduled=False
+        else:
+            self.tasklist.addtask(1,self.name,self.image,self.harvest)
+            self.scheduled=True
+
+    #old function for reference, can be thrown away later
+    def harvest_old(self):
         if self.reset_screen():
             self.move_to()
             locations=locate_item(self.device, self.fullcrop, self.threshold)

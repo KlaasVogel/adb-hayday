@@ -6,19 +6,43 @@ import numpy as np
 from ppadb.client import Client
 
 class Template():
-    offset=[0,0]
-    w,h=[0,0]
-    data=[]
-    def __init__(self, file):
-        if path.isfile(file):
+    def __init__(self, template_file):
+        self.offset=[0.0,0.0]
+        self.w,self.h=[0,0]
+        self.data=[]
+        if path.isfile(template_file):
+            self.file=path.split(template_file)[-1]
             self.data= cv2.imread(template_file)
-            self.w,self.h=template.shape[:-1]
+            self.h,self.w = self.data.shape[:-1]
             if "_C" in template_file:
-                self.offset=[w/2,h/2]
-            if "_R" in template_file:
+                print("C")
+                self.offset=[self.w/2,self.h/2]
+            if "R_" in template_file:
+                print("R")
+                self.offset[0]=0
+            if "L_" in template_file:
+                print(f"L {self.w}")
                 self.offset[0]=self.w
-            if "O_" in template_file:
+            if "_T" in template_file:
+                print("T")
                 self.offset[1]=self.h
+        print(self.offset)
+    def __repr__(self):
+        return f"Template({self.file}, offset={self.offset})"
+
+
+class ShowOutput():
+    def __init__(self):
+        self.img=None
+    @staticmethod
+    def show():
+        return False
+    def update(self,img):
+        self.img=img
+        if self.show():
+            cv2.imshow('Example - Show image in window',self.img)
+            cv2.waitKey(0)
+        cv2.destroyAllWindows() # destroys the window showing image
 
 
 class Adb_Device():
@@ -26,7 +50,7 @@ class Adb_Device():
     touch="/dev/input/event6"
     res_x, res_y= [1600,900]
     max=32767
-
+    output=ShowOutput()
     def __init__(self):
         client=Client(host='127.0.0.1', port=5037)
         print(client.version())
@@ -87,16 +111,22 @@ class Adb_Device():
         self.device.shell(shellcmd)
         self.release_all()
         self.release_all()
+        sleep(.1)
         # cmd=f"{self.touch} 3 57 2 && {self.touch} 3 53 {int((x_c-dx)*self.max)} && {self.touch} 3 54 {int(y*self.max)}"
         # self.device.shell(cmd)
         # self.device.shell(f"input swipe {(x_c+dx)*self.res_x} {(y)*self.res_y} {(x_c-dx)*self.res_x} {(y)*self.res_y} 2000")
         # self.release_all()
         # self.release_all()
 
+    def printScreen(self):
+        screencap = self.device.screencap()
+        screenshot_file=path.join('images','screen.png')
+        with open(screenshot_file, 'wb') as f:
+            f.write(screencap)
 
-
-    def show(self):
-        return False
+    def tap(self, x, y):
+        self.device.shell(f'input tap {x} {y}')
+        sleep(.3)
 
     def trace(self, waypoints, size=0, pressure=0):
         eventlist=[]
@@ -113,7 +143,7 @@ class Adb_Device():
             eventlist.append(f"{self.touch} 0 0 0")
         # for event in eventlist:
         #     self.device.shell(event)
-        shellcmd=" & ".join(eventlist)
+        shellcmd=" && ".join(eventlist)
         self.device.shell(shellcmd)
         self.release_all()
         # self.device.shell(shellcmd)
@@ -135,49 +165,55 @@ class Adb_Device():
             x=x-dx
             y=y-dy
 
-    def locate_item(self,templates,threshold=0.75,margin=0.15,one=False,show=True):
-        screencap = device.screencap()
-        # screenshot_file=path.join('images','screen.png')
+    def swipe(self, x1, y1, x2, y2, speed=300):
+        self.device.shell(f'input swipe {x1} {y1} {x2} {y2} {speed}')
+        sleep(.1)
+
+    def locate_item(self,templates,threshold=0.75,margin=0.05,one=False,show=True):
+        screencap = self.device.screencap()
         result_file=path.join('images','result.png')
         loclist=[]
 
-        # with open(screenshot_file, 'wb') as f:
-        #     f.write(screencap)
-        # sleep(.2)
-        # # device.shell('input touchscreen swipe 500 500 500 500 2000')
-        # img=cv2.imread(screenshot_file)
-        img_array=np.array(screencap)
-        img=cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+        screenshot_file=path.join('images','screen.png')
+        with open(screenshot_file, 'wb') as f:
+            f.write(screencap)
+        sleep(.1)
+        img=cv2.imread(screenshot_file)
+        # img_array=np.array(screencap)
+        # img=cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
         for template in templates:
+            if len(template.data):
                 result = cv2.matchTemplate(img, template.data, cv2.TM_CCOEFF_NORMED)
                 max=np.max(result)
+                print(template.file)
+                print(f"offset: {template.offset}")
+                print(f"max: {max}")
                 if (max>=threshold):
                     min=max-margin if (max-margin >= threshold) else threshold
                     loc=np.where(result >= min)
                     if len(loc[0]):
                         for pt in zip(*loc[::-1]):  # Switch collumns and rows
+                            # cv2.rectangle(img, pt, (pt[0] + template.w, pt[1] + template.h), (0, 0, 255), 2)
+                            x,y=np.add(pt,template.offset).astype(int)
                             for location in loclist:
-                                x,y=np.add(pt,template.offset)
-                                print(pt)
-                                print(x,y)
-                                sleep(10)
-                                if not (isclose(x, location[0], abs_tol=90) and isclose(y, location[1], abs_tol=40)):
-                                    print(f"found on {x},{y} ")
-                                    cv2.rectangle(img, pt, (pt[0] + template.w, pt[1] + template.h), (0, 0, 255), 2)
-                                    cv2.circle(img, (x,y), 10, (0,255,0), -1)
-                                    loclist.append([x,y])
-        # cv2.imwrite(result_file, img)
-        if self.show():
-            # cv2.imshow('Template',template)
-            cv2.imshow('Example - Show image in window',img)
-            # cv2.waitKey(0) # waits until a key is pressed
-            # cv2.destroyAllWindows() # destroys the window showing image
+                                if (isclose(x, location[0], abs_tol=30) and isclose(y, location[1], abs_tol=16)):
+                                    break
+                            else:
+                                print(f"found on {x},{y} ")
+                                print(f"point={pt}")
+                                cv2.rectangle(img, pt, (pt[0] + template.w, pt[1] + template.h), (255, 0, 255), 2)
+                                loclist.append([x,y])
+                        for vector in loclist:
+                            x,y=vector
+                            cv2.circle(img, (x,y), 10, (0,255,0), -1)
+        cv2.imwrite(result_file, img)
+        self.output.update(img)
         if one:
             winner=loclist[0]
             score=99999
             for loc in loclist:
                 x,y=loc
-                newscore=(800-x)*(800-x)+(450-y)*(450-y)
+                newscore=(self.res_x/2-x)*(self.res_x/2-x)+(self.res_y/2-y)*(self.res_y/2-y)
                 if newscore<score:
                     winner=[x,y]
                     score=newscore

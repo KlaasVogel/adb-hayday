@@ -1,8 +1,10 @@
 
-from hd_objects import Crops, Production, Pen
+from hd_objects import Board, Crops, Production, Pen
 from tasks import Tasklist
-from adb import Adb_Device
-from tkinter import Tk, Frame, Label
+from adb import Adb_Device, ShowOutput
+from tkinter import Tk, Frame
+from gui import Buttons, Output
+from threading import Thread
 
 
 
@@ -27,14 +29,21 @@ from tkinter import Tk, Frame, Label
 # tl.start()
 
 class MainApp(Tk):
-    device=Adb_Device()
-    tl=Tasklist()
-    crops=Crops(device, tl)
     def __init__(self):
         self.root = Tk.__init__(self)
-        self.crops.add('wheat', -1, 5)
-        self.device.zoom_out()
-        # self.tl.start()
+        self.tl=Tasklist()
+        self.device=Adb_Device()
+        self.crops=Crops(self.device, self.tl)
+        self.board=Board(self.device, self.tl)
+        self.buttons=Buttons(self, start=self.tl.start, pause= self.tl.hold, stop=self.tl.stop, capture=self.device.printScreen)
+        self.output=Output(self)
+        self.device.output.show=self.output.show.get
+        self.output.grid(row=1, column=1)
+        self.buttons.grid(row=2,column=1)
+        self.crops.add('wheat', -10, 9)
+
+    def start(self):
+        self.tl.start()
 
 if __name__ == "__main__":
     app = MainApp()
