@@ -47,13 +47,13 @@ class HD():
         return False
     def reset_screen(self):
         print('cleaning')
-        locations=self.device.locate_item(self.home,.9)
+        locations=self.device.locate_item(self.home,.80)
         if not len(locations):
             if not self.check_full():
                 for x in range(4):
                     self.device.swipe(200,150,1300,700,100)
                 self.device.zoom_out()
-                self.device.swipe(1300,300,700,300,400)
+                self.device.swipe(1300,300,600,400,400)
             locations=self.device.locate_item(self.home,.9)
             if not len(locations):
                 print('ohoh...no home?')
@@ -64,6 +64,20 @@ class HD():
         sleep(.1)
         return True
 
+class Card():
+    def __init__(self,tasklist, location):
+        self.tasklist=tasklist
+        self.location = location
+        self.requests = {}
+    def add(self,request):
+        if request not in self.requests:
+            self.requests[request] = {"done":False, "scheduled":0}
+    def __repr__(self):
+        products=[]
+        for product,data in self.requests.items():
+            text=f"{product} - done" if data["done"] else f"{product} - {data['scheduled']}"
+            products.append(text)
+        return "Cards:"+", ".join(products)
 
 class Board(HD):
     def __init__(self, device, tasklist):
@@ -73,11 +87,17 @@ class Board(HD):
         self.base_template=[Template(path.join('images','board','base_TR_.png'))]
         self.complete_template=[Template(path.join('images','board','check_CR_.png'))]
         self.card_template=[Template(path.join('images','board','pins_C_B.png'))]
+        self.product_templates={}
         self.icon=[1335,775]
-        self.cards=[[290,290],[535,290],[775,290],
-                    [290,520],[535,520],[775,520],
-                    [290,730]]
-        self.tasks=[]
+        self.cards=[]
+        for location in [[290,290],[535,290],[775,290],
+                        [290,520],[535,520],[775,520],
+                        [290,730]]:
+            self.cards.append(Card(tasklist, location))
+        for file in glob(path.join('images', 'products','*.png')):
+            filename=path.split(file)[-1]
+            product=path.splitext(filename)[0]
+            self.product_templates[product]=Template(file)
         self.tasklist.addtask(.1,'board',self.image,self.check)
 
     def check(self):
@@ -96,9 +116,24 @@ class Board(HD):
                     nextcheck=.2
                 else:
                     print('update board info')
+                    for card in self.cards:
+                        x,y=card.location
+                        self.device.tap(x,y)
+                        sleep(.1)
 
+                        #this bit of code need some tweaking to speed it up
+                        # for product,template in self.product_templates.items():
+                        #     if len(self.device.locate_item([template],.93)):
+                        #         print(f'found: {product}')
+                        #         card.add(product)
+                        products=self.device.check_present(self.product_templates,.93)
+                        for product in products:
+                            print(f'found: {product}')
+                            card.add(product)
 
             nextcheck=5
+        print(self.cards)
+        sleep(5)
         self.tasklist.addtask(nextcheck,'board',self.image,self.check)
 
 

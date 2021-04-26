@@ -169,45 +169,61 @@ class Adb_Device():
         self.device.shell(f'input swipe {x1} {y1} {x2} {y2} {speed}')
         sleep(.1)
 
-    def locate_item(self,templates,threshold=0.75,margin=0.05,one=False,show=True):
+    def load_screenCap(self):
         screencap = self.device.screencap()
-        result_file=path.join('images','result.png')
         loclist=[]
 
         screenshot_file=path.join('images','screen.png')
         with open(screenshot_file, 'wb') as f:
             f.write(screencap)
         sleep(.1)
-        img=cv2.imread(screenshot_file)
-        # img_array=np.array(screencap)
-        # img=cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+        return cv2.imread(screenshot_file)
+
+    def get_match(self, template, img, threshold, margin):
+        loc=[]
+        if len(template.data):
+            result = cv2.matchTemplate(img, template.data, cv2.TM_CCOEFF_NORMED)
+            max=np.max(result)
+            print(template.file)
+            print(f"offset: {template.offset}")
+            print(f"max: {max}")
+            if (max>=threshold):
+                min=max-margin if (max-margin >= threshold) else threshold
+                loc=np.where(result >= min)
+        return loc
+
+    def check_present(self, template_dict,threshold=0.75,margin=0.05):
+        img=self.load_screenCap()
+        list=[]
+        for name,template in template_dict.items():
+            if len(self.get_match(template, img, threshold, margin)):
+                list.append(name)
+        return list
+
+    def locate_item(self,templates,threshold=0.75,margin=0.05,one=False,show=True):
+        result_file=path.join('images','result.png')
+        img_base=self.load_screenCap()
+        img_result=img_base
+        loclist=[]
         for template in templates:
-            if len(template.data):
-                result = cv2.matchTemplate(img, template.data, cv2.TM_CCOEFF_NORMED)
-                max=np.max(result)
-                print(template.file)
-                print(f"offset: {template.offset}")
-                print(f"max: {max}")
-                if (max>=threshold):
-                    min=max-margin if (max-margin >= threshold) else threshold
-                    loc=np.where(result >= min)
-                    if len(loc[0]):
-                        for pt in zip(*loc[::-1]):  # Switch collumns and rows
-                            # cv2.rectangle(img, pt, (pt[0] + template.w, pt[1] + template.h), (0, 0, 255), 2)
-                            x,y=np.add(pt,template.offset).astype(int)
-                            for location in loclist:
-                                if (isclose(x, location[0], abs_tol=30) and isclose(y, location[1], abs_tol=16)):
-                                    break
-                            else:
-                                print(f"found on {x},{y} ")
-                                print(f"point={pt}")
-                                cv2.rectangle(img, pt, (pt[0] + template.w, pt[1] + template.h), (255, 0, 255), 2)
-                                loclist.append([x,y])
-                        for vector in loclist:
-                            x,y=vector
-                            cv2.circle(img, (x,y), 10, (0,255,0), -1)
-        cv2.imwrite(result_file, img)
-        self.output.update(img)
+            loc=self.get_match(template, img_base, threshold, margin)
+            if len(loc) and len(loc[0]):
+                for pt in zip(*loc[::-1]):  # Switch collumns and rows
+                    # cv2.rectangle(img, pt, (pt[0] + template.w, pt[1] + template.h), (0, 0, 255), 2)
+                    x,y=np.add(pt,template.offset).astype(int)
+                    for location in loclist:
+                        if (isclose(x, location[0], abs_tol=30) and isclose(y, location[1], abs_tol=16)):
+                            break
+                    else:
+                        print(f"found on {x},{y} ")
+                        print(f"point={pt}")
+                        cv2.rectangle(img_result, pt, (pt[0] + template.w, pt[1] + template.h), (255, 0, 255), 2)
+                        loclist.append([x,y])
+                for vector in loclist:
+                    x,y=vector
+                    cv2.circle(img_result, (x,y), 10, (0,255,0), -1)
+        cv2.imwrite(result_file, img_result)
+        self.output.update(img_result)
         if one:
             winner=loclist[0]
             score=99999
