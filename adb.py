@@ -15,18 +15,18 @@ class Template():
             self.data= cv2.imread(template_file)
             self.h,self.w = self.data.shape[:-1]
             if "_C" in template_file:
-                print("C")
+                # print("C")
                 self.offset=[self.w/2,self.h/2]
             if "R_" in template_file:
-                print("R")
+                # print("R")
                 self.offset[0]=0
             if "L_" in template_file:
-                print(f"L {self.w}")
+                # print(f"L {self.w}")
                 self.offset[0]=self.w
             if "_T" in template_file:
-                print("T")
+                # print("T")
                 self.offset[1]=self.h
-        print(self.offset)
+        # print(self.offset)
     def __repr__(self):
         return f"Template({self.file}, offset={self.offset})"
 
@@ -84,6 +84,37 @@ class Adb_Device():
         dy=list2[0][1]-list1[0][1]
         for x,y in list1:
             newlist.append([x+dx,y+dy])
+        return newlist
+
+    @staticmethod
+    def getClosest(list,vector):
+        x_target, y_target = vector
+        winner=list[0]
+        score=99999
+        for loc in list:
+            x,y=loc
+            newscore=(x_target-x)**2+(y_target-y)**2
+            if newscore<score:
+                winner=[x,y]
+                score=newscore
+        return winner
+
+    @staticmethod
+    def checkClose(x1,y1, list, tol_x=30, tol_y=16):
+        for location in list:
+            x2,y2=location
+            if (isclose(x1, x2, abs_tol=tol_x) and isclose(y1, y2, abs_tol=tol_y)):
+                return True
+        else:
+            return False
+
+    @staticmethod
+    def getClose(list,x1,y1,tol_x,tol_y):
+        newlist=[]
+        for vector in list:
+            x2,y2=vector
+            if (isclose(x1, x2, abs_tol=tol_x) and isclose(y1, y2, abs_tol=tol_y)):
+                newlist.append(vector)
         return newlist
 
     def release_all(self):
@@ -150,7 +181,7 @@ class Adb_Device():
 
     def move(self, x, y):
         print('moving')
-        border_x=self.res_x*600/1600
+        border_x=self.res_x*500/1600
         border_y=self.res_y*300/900
         while (x or y):
             if x<0:
@@ -161,7 +192,7 @@ class Adb_Device():
                 dy=y if y>-border_y else -border_y
             else:
                 dy=y if y<border_y else border_y
-            device.shell(f'input swipe {self.res_x/2+dx} {self.res_y/2+dy} 800 450 500')
+            self.swipe(self.res_x/2+dx,self.res_y/2+dy, 800, 450, 500)
             x=x-dx
             y=y-dy
 
@@ -171,8 +202,6 @@ class Adb_Device():
 
     def load_screenCap(self):
         screencap = self.device.screencap()
-        loclist=[]
-
         screenshot_file=path.join('images','screen.png')
         with open(screenshot_file, 'wb') as f:
             f.write(screencap)
@@ -184,9 +213,9 @@ class Adb_Device():
         if len(template.data):
             result = cv2.matchTemplate(img, template.data, cv2.TM_CCOEFF_NORMED)
             max=np.max(result)
-            print(template.file)
-            print(f"offset: {template.offset}")
-            print(f"max: {max}")
+            # print(template.file)
+            # print(f"offset: {template.offset}")
+            # print(f"max: {max}")
             if (max>=threshold):
                 min=max-margin if (max-margin >= threshold) else threshold
                 loc=np.where(result >= min)
@@ -200,23 +229,22 @@ class Adb_Device():
                 list.append(name)
         return list
 
-    def locate_item(self,templates,threshold=0.75,margin=0.05,one=False,show=True):
+
+    def locate_item(self,templates,threshold=0.75,margin=0.05,one=False,all=False):
         result_file=path.join('images','result.png')
         img_base=self.load_screenCap()
         img_result=img_base
         loclist=[]
         for template in templates:
+            # print(template)
             loc=self.get_match(template, img_base, threshold, margin)
             if len(loc) and len(loc[0]):
                 for pt in zip(*loc[::-1]):  # Switch collumns and rows
-                    # cv2.rectangle(img, pt, (pt[0] + template.w, pt[1] + template.h), (0, 0, 255), 2)
+                    cv2.rectangle(img_result, pt, (pt[0] + template.w, pt[1] + template.h), (0, 0, 255), 2)
                     x,y=np.add(pt,template.offset).astype(int)
-                    for location in loclist:
-                        if (isclose(x, location[0], abs_tol=30) and isclose(y, location[1], abs_tol=16)):
-                            break
-                    else:
-                        print(f"found on {x},{y} ")
-                        print(f"point={pt}")
+                    if all or not self.checkClose(x,y,loclist):
+                        # print(f"found on {x},{y} ")
+                        # print(f"point={pt}")
                         cv2.rectangle(img_result, pt, (pt[0] + template.w, pt[1] + template.h), (255, 0, 255), 2)
                         loclist.append([x,y])
                 for vector in loclist:
@@ -224,16 +252,9 @@ class Adb_Device():
                     cv2.circle(img_result, (x,y), 10, (0,255,0), -1)
         cv2.imwrite(result_file, img_result)
         self.output.update(img_result)
-        if one:
-            winner=loclist[0]
-            score=99999
-            for loc in loclist:
-                x,y=loc
-                newscore=(self.res_x/2-x)*(self.res_x/2-x)+(self.res_y/2-y)*(self.res_y/2-y)
-                if newscore<score:
-                    winner=[x,y]
-                    score=newscore
-            return winner
+        if one and len(loclist):
+            target=[self.res_x/2, self.res_y/2]
+            loclist=self.getClosest(loclist, target)
         return loclist
 
 

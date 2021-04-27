@@ -1,5 +1,5 @@
 
-from hd_objects import Board, Crops, Production, Pen
+from hd_objects import Board, Crops, Pens
 from tasks import Tasklist
 from adb import Adb_Device, ShowOutput
 from tkinter import Tk, Frame
@@ -34,6 +34,7 @@ class MainApp(Tk):
         self.tl=Tasklist()
         self.device=Adb_Device()
         self.crops=Crops(self.device, self.tl)
+        self.pens=Pens(self.device, self.tl)
         self.board=Board(self.device, self.tl)
         self.buttons=Buttons(self, start=self.tl.start, pause= self.tl.hold, stop=self.tl.stop, capture=self.device.printScreen)
         self.output=Output(self)
@@ -41,6 +42,9 @@ class MainApp(Tk):
         self.output.grid(row=1, column=1)
         self.buttons.grid(row=2,column=1)
         self.crops.add('wheat', -10, 9)
+        self.crops.add('carrot', -9, -3)
+        self.pens.add('chicken', amount=6, lok_x=-13, lok_y=2)
+
 
     def start(self):
         self.tl.start()
