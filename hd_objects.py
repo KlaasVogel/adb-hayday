@@ -16,6 +16,8 @@ class HD():
         self.image=file if path.isfile(file) else path.join('images','no_image.png')
         self.pos_x=pos_x
         self.pos_y=pos_y
+        self.jobs=0
+        self.waiting=0
 
     @staticmethod
     def loadTemplates(map, name):
@@ -30,6 +32,16 @@ class HD():
         pos_x=40*x-40*y
         pos_y=-25*x-25*y-150
         return [pos_x, pos_y]
+
+    def getWaitTime(self):
+        if self.waiting:
+            waittime=self.waiting-int(time())
+            if waittime > 0:
+                return waittime
+        return 0
+
+    def setWaittime(self, wait):
+        self.waiting=int(time()+wait*60)
 
     def move_to(self):
         self.device.move(self.pos_x, self.pos_y)
@@ -75,7 +87,9 @@ class HD():
             if not self.check_full():
                 for x in range(4):
                     self.device.swipe(200,150,1300,700,100)
+                self.check_full()
                 self.device.zoom_out()
+                self.check_full()
                 self.device.swipe(1300,300,600,400,400)
             locations=self.check_home()
             count+=1
@@ -186,49 +200,124 @@ class Board(HD):
         self.tasklist.addtask(nextcheck,'board',self.image,self.check)
 
 
-class Production(HD):
-    def __init__(self, device, name, tasklist, threshold, icon_x, icon_y, pos_x=0, pos_y=0):
-        HD.__init__(self, device, name, tasklist, threshold, pos_x, pos_y)
-        self.template=path.join('images',name,'base.png')
-        self.table=path.join('images','table.png')
-        self.icon=[icon_x,icon_y]
-        self.tasklist=tasklist
-        self.worklist=[]
-        self.job=0
-    def add(self, product, worktime, icon_x, icon_y, second_menu=False):
-        file=path.join('images','products',f'{product}.png')
-        image=file if path.isfile(file) else path.join('images','no_image.png')
-        self.worklist.append({"product":product,"image":image,"worktime":worktime,"icon":[icon_x,icon_y],"second_menu":second_menu})
-    def start(self):
-        if len(self.worklist):
-            task=self.worklist[0]
-            self.tasklist.addtask(2,task["product"],task["image"],self.produce)
-    def produce(self):
-        task=self.worklist[self.job]
+class Recipe():
+    def __init__(self, station, product, recipe):
+        self.station=station
+        self.product=product
+        for key,value in recipe.items():
+            setattr(self, key, value)
+            station.tasklist.addProduct(product, self.addJob, station.getJobTime)
+
+    def addJob(self):
+        self.station.jobs.append(self.product)
+        for ingredient,amount in self.ingredients.items():
+            self.station.tasklist.updateWish(ingredient, amount)
+        self.station.checkJobs()
+        return self.amount
+
+    def create(self):
+        self.station.start(self.product, self.icon, self.cooktime)
+
+class Station(HD):
+    def __init__(self, device, tasklist, station, recipes, threshold, templates, pos_x, pos_y):
+        HD.__init__(self, device, station, tasklist, threshold, pos_x, pos_y)
+        self.recipes={}
+        self.templates=templates
+        self.jobs=[]
+        for product,recipe in recipes.items():
+            self.recipes[product]=Recipe(self,product,recipe)
+
+    def getJobTime(self):
+        waittime=self.getWaitTime()
+        for product in self.jobs:
+            waittime+=self.recipes[product].cooktime
+        return waittime
+
+    def checkJobs(self):
+        print(f"checking jobs for {self.product}")
+        if not self.getWaitTime() and len(self.jobs):
+            print('adding task')
+            product=self.jobs.pop(0)
+            self.tasklist.addtask(2, product, self.image, self.recipes[product].create)
+
+    def collect(self):
         if self.reset_screen():
             self.move_to()
-            location=locate_item(self.device, self.template, self.threshold, one=True)
+            location=self.device.locate_item(self.templates, self.threshold, one=True)
             if len(location):
                 x,y=location
-                x=x+self.icon[0]
-                y=y+self.icon[1]
-                dx,dy=task['icon']
-                self.device.shell(f"input tap {x} {y}")
-                sleep(1)
-                self.device.shell(f'input swipe {x+dx} {y+dy} {x} {y+100} 300')
-                sleep(.5)
-            self.move_from()
-        self.job+=1
-        if self.job==len(self.worklist):
-            self.job=0
-        nexttask=self.worklist[self.job]
-        self.tasklist.addtask(task["worktime"],nexttask["product"],nexttask["image"],self.produce)
+                self.device.tap(x,y)
+                sleep(.2)
+                self.check_full()
+            self.checkJobs()
+        else:
+            self.tasklist.addtask(1, self.product, self.image, self.collect)
 
+    def start(self,product,icon,cooktime):
+        if self.reset_screen():
+            self.move_to()
+            location=self.device.locate_item(self.templates, self.threshold, one=True)
+            if len(location):
+                x,y=location
+                dx,dy=icon
+                self.device.tap(x,y)
+                sleep(.2)
+                self.device.swipe(x+dx,y+dy,x,y,300)
+                sleep(.2)
+                if self.check_full():
+                    self.recipes[product].addJob()
+                self.setWaittime(cooktime)
+                self.tasklist.addtask(cooktime, self.product, self.image, self.collect)
+        else:
+            self.tasklist.addtask(1, self.product, self.image, self.collect)
+
+class Stations(list):
+    device=None
+    tasklist=None
+    feed_mill={'threshold':.75,'recipes':{
+        'chicken feed':{'amount':3, 'cooktime':5, 'icon': [-50,-300], 'ingredients': {'wheat': 2, 'corn':1}},
+        'cow feed':{'amount':3, 'cooktime':10, 'icon': [-220,-230], 'ingredients': {'soy': 2, 'corn':1}},
+        'pig feed':{'amount':3, 'cooktime':20, 'icon': [-350,-110], 'ingredients': {'carrot': 2, 'soy':1}},
+        'sheep feed':{'amount':3, 'cooktime':40, 'icon': [-390,50], 'ingredients': {}}   }}
+    dairy={'threshold':.75,'recipes':{
+        'cream':{'amount':1, 'cooktime':20, 'icon': [-15,-250], 'ingredients': {'milk': 1}},
+        'butter':{'amount':1, 'cooktime':30, 'icon': [-185,-175], 'ingredients': {'milk': 2}},
+        'cheese':{'amount':1, 'cooktime':60, 'icon': [-325,-55], 'ingredients': {'milk': 3}},
+        'cheese2':{'amount':1, 'cooktime':120, 'icon': [-365,90], 'ingredients': {}}   }}
+    sugar_mill={'threshold':.75,'recipes':{
+        'brown sugar':{'amount':1, 'cooktime':60, 'icon': [-110,-130], 'ingredients': {'sugarcane': 1}},
+        'sugar2':{'amount':1, 'cooktime':120, 'icon': [-245, 0], 'ingredients': {}}   }}
+    popcorn_pot={'threshold':.75,'recipes':{
+        'popcorn':{'amount':1, 'cooktime':30, 'icon': [-135,-155], 'ingredients': {'corn': 2}},
+        'pop2':{'amount':1, 'cooktime':120, 'icon': [-270,-25], 'ingredients': {}}   }}
+    bbq_grill={'threshold':.75,'recipes':{
+        'pancake':{'amount':1, 'cooktime':30, 'icon': [-127,-230], 'ingredients': {'egg': 3, 'brown sugar':1}},
+        'bacon and eggs':{'amount':1, 'cooktime':60, 'icon': [-285,-120], 'ingredients': {'egg': 4,'bacon':2}},
+        'burger':{'amount':1, 'cooktime':120, 'icon': [-345, 25], 'ingredients': {}}   }}
+    bakery={'threshold':.75,'recipes':{
+        'bread':{'amount':1, 'cooktime':5, 'icon': [-70,-270], 'ingredients': {'wheat': 3}},
+        'cake':{'amount':1, 'cooktime':30, 'icon': [-240,-210], 'ingredients': {'corn': 2, 'egg':2}},
+        'cookie':{'amount':1, 'cooktime':60, 'icon': [-370,-85], 'ingredients': {'wheat': 2, 'egg':2, 'brown sugar':1}},
+        'cupcake':{'amount':1, 'cooktime':120, 'icon': [-415, 65], 'ingredients': {}}   }}
+
+    def __init__(self, device, tasklist):
+        self.device=device
+        self.tasklist=tasklist
+        self.templates={}
+    def add(self, station, threshold=None, lok_x=0, lok_y=0):
+        pos_x, pos_y = HD.getPos(lok_x,lok_y)
+        if hasattr(self,station):
+            if station not in self.templates:
+                self.templates[station]=HD.loadTemplates('stations',station)
+            data=getattr(self,station)
+            self.append(Station(self.device, self.tasklist, station, data['recipes'], data['threshold'], self.templates[station], pos_x, pos_y ))
 
 class Pens(list):
     device=None
     tasklist=None
     chicken={'eattime':20, 'product':'egg', 'food':'chicken feed','threshold':.75,'icon_x':-120,'icon_y':-215}
+    cow={'eattime':60, 'product':'milk', 'food':'cow feed','threshold':.75,'icon_x':-100,'icon_y':-215}
+    pig={'eattime':240, 'product':'bacon', 'food':'pig feed','threshold':.75,'icon_x':-115,'icon_y':-285}
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist
@@ -256,23 +345,10 @@ class Pen(HD):
         self.icon_feed=[icon_x,icon_y]
         self.icon_collect=[icon_x-160,icon_y+140]
         self.eattime=eattime
-        self.jobs=0
         self.temp_pen=temp_pen
         self.temp_full=temp_full
         self.temp_empty=temp_empty
-        self.waiting=0
         self.tasklist.addProduct(product, self.addJob, self.getJobTime)
-        # self.tasklist.addtask(.02, self.animal, self.image, self.collect)
-
-    def getWaitTime(self):
-        if self.waiting:
-            waittime=self.waiting-int(time())
-            if waittime > 0:
-                return waittime
-        return 0
-
-    def setWaittime(self, wait):
-        self.waiting=int(time()+wait*60)
 
     def getJobTime(self):
         waittime=self.getWaitTime()
@@ -289,21 +365,19 @@ class Pen(HD):
         print(f"checking jobs for {self.product}")
         if not self.getWaitTime():
             print('adding task')
-            self.tasklist.addtask(0.1, self.animal, self.image, self.collect)
+            self.jobs-=1
+            self.tasklist.addtask(1, self.animal, self.image, self.collect)
 
     def feed(self,animals_full):
         print('feeding')
         x,y=animals_full[0]
         dx,dy=self.icon_feed
         animals= self.device.locate_item(self.temp_empty,.45, all=True)
-        waypoints = animals_full + self.device.getClose(animals, x, y, 150, 75)
-        print(waypoints)
-        sleep(2)
+        waypoints = animals_full + self.device.getClose(animals, x, y, 300, 75)
         self.tap_and_trace(waypoints, dx, dy)
-        sleep(2)
+        sleep(.3)
         if self.check_full():
-            print('ohoh need feed')
-            sleep(10)
+            self.tasklist.addtask(4, self.animal, self.image, self.collect)
         else:
             self.setWaittime(self.eattime)
 
@@ -313,35 +387,37 @@ class Pen(HD):
             location=self.device.locate_item(self.temp_pen, self.threshold, one=True)
             if len(location):
                 x,y=location
-                # print(f'tapping {self.animal}')
-                # self.device.tap(x,y)
-                # sleep(10)
-                print('locating animals')
                 animals=self.device.locate_item(self.temp_full,.50, all=True)
                 waypoints=[location]+self.device.getClose(animals, x, y, 150,75)
-                sleep(5)
                 if animals:
                     dx,dy=self.icon_collect
                     self.tap_and_trace(waypoints, dx, dy)
                     if not self.check_full():
                         self.tasklist.removeWish(self.product,self.amount)
                 self.feed(waypoints)
-            sleep(10)
+                self.checkJobs()
             self.move_from()
-        # self.tasklist.addtask(self.eattime, self.animal, self.image, self.collect)
+        else:
+            self.tasklist.addtask(1, self.animal, self.image, self.collect)
 
 
 class Crops(list):
     device=None
     tasklist=None
-    wheat={'growtime':2, 'threshold':.85, 'field':0, 'icon_x':-125, 'icon_y':-150}
-    corn={'growtime':5, 'threshold':.85, 'field':1, 'icon_x':3, 'icon_y':4}
-    carrot={'growtime':10, 'threshold':.85, 'field':0, 'icon_x':3, 'icon_y':4}
-    soy={'growtime':20, 'threshold':.85, 'field':0, 'icon_x':3, 'icon_y':4}
+    wheat={'growtime':2, 'threshold':.85, 'field':0, 'icon_x':366, 'icon_y':-255}
+    corn={'growtime':5, 'threshold':.85, 'field':1, 'icon_x':238, 'icon_y':-135}
+    soy={'growtime':20, 'threshold':.85, 'field':0, 'icon_x':313, 'icon_y':-410}
+    sugarcane={'growtime':30, 'threshold':.85, 'field':0, 'icon_x':135, 'icon_y':-305}
+    carrot={'growtime':10, 'threshold':.85, 'field':0, 'icon_x':15, 'icon_y':-125}
+
     templates={}
+    empty_templates=[]
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist
+        self.empty_templates.append(HD.loadTemplates('crops','empty_0*'))
+        self.empty_templates.append(HD.loadTemplates('crops','empty_1*'))
+        self.switch_template=HD.loadTemplates('crops','switch*')
     def add(self, crop, amount=1, threshold=None, lok_x=0, lok_y=0):
         pos_x, pos_y = HD.getPos(lok_x,lok_y)
         if hasattr(self,crop):
@@ -349,78 +425,86 @@ class Crops(list):
                 self.templates[crop]=HD.loadTemplates('crops',crop)
             data=getattr(self,crop)
             self.append(Crop(self.device, crop, amount, self.tasklist,
-                             data['growtime'], data['threshold'], data['icon_x'], data['icon_y'], data['field'],
-                             self.templates[crop], pos_x, pos_y))
+                             data['growtime'], data['threshold'], data['icon_x'], data['icon_y'],
+                             self.templates[crop],self.empty_templates[data['field']],self.switch_template,
+                             pos_x, pos_y))
 
 class Crop(HD):
-    fields=[]
-    for i in range(2):
-        list=[]
-        glob_query=path.join('images', 'crops', f'empty_{i}*.png')
-        glob_result=glob(glob_query)
-        for file in glob_result:
-            list.append(Template(file))
-        fields.append(list)
-    def __init__(self, device, name, amount, tasklist, growtime, threshold, icon_x, icon_y, field=0, templates=[], pos_x=0, pos_y=0):
-        HD.__init__(self, device, name, tasklist, threshold, pos_x, pos_y)
+    def __init__(self, device, product, amount, tasklist, growtime, threshold, icon_x, icon_y, temp_full, temp_empty, temp_switch, pos_x=0, pos_y=0):
+        HD.__init__(self, device, product, tasklist, threshold, pos_x, pos_y)
         self.growtime=growtime
         self.amount=amount
         self.icon=[icon_x,icon_y]
-        self.templates=templates
-        self.field_templates=self.fields[field]
-        self.scheduled=False
-        # self.crop_selected=path.join('images','crops',f'{name}_select.png')
-        # self.field=path.join('images','crops',f'empty_{field}.png')
-        # self.field_selected=path.join('images','crops', f'empty_select_{field}.png')
-        # self.tasklist.addtask(.1,self.name,self.image,self.harvest)
+        self.switch=[-485,120]
+        self.scythe=[-190,-80]
+        self.temp_full=temp_full
+        self.temp_empty=temp_empty
+        self.temp_switch=temp_switch
+        self.tasklist.addProduct(product, self.addJob, self.getJobTime)
 
-    def sow(self):
-        print('sowing')
-        empty_fields=self.device.locate_item(self.field_templates, .85)
-        print(empty_fields)
+    def getJobTime(self):
+        waittime=self.getWaitTime()
+        waittime+=self.jobs*self.growtime
+        return waittime
+
+    def addJob(self):
+        self.jobs+=1
+        self.checkJobs()
+        return self.amount
+
+    def checkJobs(self):
+        print(f"checking jobs for {self.product}")
+        if not self.getWaitTime():
+            print('adding task')
+            self.jobs-=1
+            self.tasklist.addtask(0.1, self.product, self.image, self.harvest)
         sleep(5)
+
+    def calcLocation(self,location):
+        x,y=location
+        dx,dy=self.switch
+        x2=x-dx
+        y2=y-dy
+        return [x2,y2]
+
+    def sow(self,fields):
+        print('sowing')
+        empty_fields=self.device.locate_item(self.temp_empty, .9)
+        # waypoints=fields+empty_fields
+        if len(empty_fields):
+            x,y=empty_fields[0]
+            self.device.tap(x,y)
+            sleep(.2)
+            switch_location=self.device.locate_item(self.temp_switch, .85)
+            if len(switch_location):
+                x,y=switch_location[0]
+                new_field_location=self.calcLocation(switch_location[0])
+                self.device.correct(empty_fields,[new_field_location])
+                dx,dy=self.icon
+                icon=[x+dx,y+dy]
+                waypoints=[icon]+empty_fields
+                self.device.trace(waypoints)
+                sleep(.2)
+                self.check_full()
+            else:
+                print('error!')
+            self.setWaittime(self.growtime)
+
 
     def harvest(self):
         if self.reset_screen():
-            fields=self.device.locate_item(self.templates, threshold=self.threshold)
-            if len(fields):
-                self.tap_and_trace(fields,-130,-40)
-                sleep(1)
-                full = self.check_full()
-                self.sow()
-                self.tasklist.updateWish(self.name, -len(fields))
-                if not full and self.tasklist.checkWish(self.name):
-                    self.tasklist.addtask(self.growtime,self.name,self.image,self.harvest)
-                    self.scheduled=True
-                    return
-            self.scheduled=False
-        else:
-            self.tasklist.addtask(1,self.name,self.image,self.harvest)
-            self.scheduled=True
-
-    #old function for reference, can be thrown away later
-    def harvest_old(self):
-        if self.reset_screen():
             self.move_to()
-            locations=locate_item(self.device, self.fullcrop, self.threshold)
-            if len(locations):
-                # self.tap_and_click(locations,130,30)
-                # sleep(3)
-                self.device.shell(f"input tap {locations[0][0]} {locations[0][1]}")
-                sleep(.2)
-                new=locate_item(self.device, self.crop_selected,0)
-                if len(new):
-                    locations=correct(locations,new)
-                self.click(locations, 130,40)
-                sleep(2)
-                self.check_full()
-            locations = locate_item(self.device, self.field,.9)
-            if len(locations):
-                self.device.shell(f"input tap {locations[0][0]} {locations[0][1]}")
-                sleep(.2)
-                new=locate_item(self.device, self.field_selected,0)
-                if len(new):
-                    locations=correct(locations,new)
-                self.click(locations, *self.icon)
+            print(f'harvesting: {self.product}')
+            fields=self.device.locate_item(self.temp_full, threshold=self.threshold)
+            if len(fields):
+                dx,dy=self.scythe
+                self.tap_and_trace(fields,dx,dy)
+                sleep(1)
+                if not self.check_full():
+                    self.tasklist.removeWish(self.product,self.amount)
+                sleep(1)
+            self.sow(fields)
+            self.checkJobs()
             self.move_from()
-        self.tasklist.addtask(self.growtime,self.name,self.image,self.harvest)
+        else:
+            self.tasklist.addtask(1,self.product,self.image,self.harvest)
