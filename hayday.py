@@ -1,5 +1,8 @@
 
-from hd_objects import Board, Crops, Pens, Stations
+from hd import Board
+from crops import Crops
+from stations import Stations
+from pens import Pens
 from tasks import Tasklist
 from adb import Adb_Device, ShowOutput
 from tkinter import Tk, Frame
@@ -26,15 +29,15 @@ class MainApp(Tk):
         self.crops.add('sugar cane', amount=4, lok_x=0, lok_y=-3)
         self.crops.add('carrot', amount=3, lok_x=-9, lok_y=-3)
         self.pens.add('chicken', amount=6, lok_x=-13, lok_y=2)
-        self.pens.add('chicken', amount=6, lok_x=-12, lok_y=6)
+        self.pens.add('chicken', amount=6, lok_x=5, lok_y=-6)
         self.pens.add('cow', amount=5, lok_x=-8, lok_y=3)
-        self.pens.add('pig', amount=5, lok_x=-13, lok_y=-3)
+        self.pens.add('pig', amount=5, lok_x=-10, lok_y=-1)
         self.stations.add('feed_mill', lok_x=-3, lok_y=4)
         self.stations.add('feed_mill', lok_x=-8, lok_y=-8)
         self.stations.add('dairy', lok_x=-7, lok_y=8)
         self.stations.add('bakery', lok_x=3, lok_y=10)
         self.stations.add('bbq_grill', lok_x=2, lok_y=10)
-        self.stations.add('sugar_mill', lok_x=-3, lok_y=10)
+        self.stations.add('sugar_mill', lok_x=-3, lok_y=14)
         self.stations.add('popcorn_pot', lok_x=-3, lok_y=10)
 
     def start(self):
