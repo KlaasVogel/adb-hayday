@@ -12,7 +12,7 @@ class HD():
     diamond=[Template(path.join('images','diamond_small.png'))]
     again=[Template(path.join('images','try_C_.png'))]
     arrows=[Template(path.join('images','arrows.png'))]
-    contine=[Template(path.join('images','lvl_up_C_.png'))]
+    cont=[Template(path.join('images','lvl_up_C_.png'))]
 
     def __init__(self,device,product,tasklist,threshold,pos_x,pos_y):
         self.device=device
@@ -69,8 +69,8 @@ class HD():
             x,y=locations[0]
             self.device.tap(x,y)
             sleep(1)
-    def check_connection(self):
-        locations=self.device.locate_item(self.continue,.75)
+    def check_lvl_up(self):
+        locations=self.device.locate_item(self.cont,.75)
         if len(locations):
             x,y=locations[0]
             self.device.tap(x,y)
