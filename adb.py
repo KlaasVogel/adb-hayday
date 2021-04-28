@@ -230,7 +230,7 @@ class Adb_Device():
         return list
 
 
-    def locate_item(self,templates,threshold=0.75,margin=0.05,one=False,all=False):
+    def locate_item(self,templates,threshold=0.75,margin=0.05,one=False,offset=[30,16]):
         result_file=path.join('images','result.png')
         img_base=self.load_screenCap()
         img_result=img_base
@@ -242,7 +242,7 @@ class Adb_Device():
                 for pt in zip(*loc[::-1]):  # Switch collumns and rows
                     cv2.rectangle(img_result, pt, (pt[0] + template.w, pt[1] + template.h), (0, 0, 255), 2)
                     x,y=np.add(pt,template.offset).astype(int)
-                    if all or not self.checkClose(x,y,loclist):
+                    if not self.checkClose(x,y,loclist,*offset):
                         # print(f"found on {x},{y} ")
                         # print(f"point={pt}")
                         cv2.rectangle(img_result, pt, (pt[0] + template.w, pt[1] + template.h), (255, 0, 255), 2)
@@ -256,58 +256,3 @@ class Adb_Device():
             target=[self.res_x/2, self.res_y/2]
             loclist=self.getClosest(loclist, target)
         return loclist
-
-
-    def locate_item2(self,templates,threshold,one=False):
-        screencap = device.screencap()
-
-        screenshot_file=path.join('images','screen.png')
-        result_file=path.join('images','result.png')
-        with open(screenshot_file, 'wb') as f:
-            f.write(screencap)
-        # device.shell('input touchscreen swipe 500 500 500 500 2000')
-        sleep(.2)
-        img=cv2.imread(screenshot_file)
-        template= cv2.imread(template_file)
-        w,h=template.shape[:-1]
-
-        res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
-        if not threshold:
-            threshold=np.max(res)
-            print(f'max is {threshold}')
-            # cv2.imshow('Example - Show image in window',res)
-            # cv2.waitKey(0) # waits until a key is pressed
-            # cv2.destroyAllWindows() # destroys the window showing image
-        loc = np.where(res >= threshold)
-        # print(loc)
-        if len(loc[0]):
-            loclist=[]
-            for pt in zip(*loc[::-1]):  # Switch collumns and rows
-                for location in loclist:
-                    if (isclose(pt[0], location[0], abs_tol=90) and isclose(pt[1], location[1], abs_tol=40)):
-                        # print(f"{pt} double on {location}")
-                        break
-                else:
-                    print(f"found on {pt}")
-                    cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
-                    loclist.append(pt)
-            cv2.imwrite(result_file, img)
-            if one:
-                winner=loclist[0]
-                score=99999
-                for loc in loclist:
-                    x,y=loc
-                    newscore=(800-x)*(800-x)+(450-y)*(450-y)
-                    if newscore<score:
-                        winner=[x,y]
-                        score=newscore
-                return winner
-            return loclist
-        # else:
-        #     cv2.imshow('Template',template)
-        #     cv2.imshow('Example - Show image in window',res)
-        #     cv2.waitKey(0) # waits until a key is pressed
-        #     cv2.destroyAllWindows() # destroys the window showing image
-        return []
-        # for pt in zip(*loc[::-1]):  # Switch collumns and rows
-        #     cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)

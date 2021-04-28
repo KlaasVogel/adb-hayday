@@ -6,28 +6,6 @@ from tkinter import Tk, Frame
 from gui import Buttons, Output
 from threading import Thread
 
-
-
-# test=Crop(device, 'test', tl, growtime=2 , threshold=.85 , field=0, icon_x=125, icon_y=160, pos_x=100 , pos_y=600)
-#device.zoom_out()
-# wheat=Crop(device, 'wheat', tl, growtime=2 , threshold=.85 , field=0, icon_x=125, icon_y=160, pos_x=100 , pos_y=600)
-# carrot=Crop(device, 'carrot', tl, growtime=10 , threshold=.55 , field=0, icon_x=375, icon_y=10, pos_x=-75 , pos_y=300)
-# corn=Crop(device, 'corn', tl , growtime=5 , threshold=.8 , field=1, icon_x=200, icon_y=25, pos_x=-400 , pos_y=550)
-# soy=Crop(device, 'soy', tl, growtime=20 , threshold=.8 , field=0, icon_x=175, icon_y=300, pos_x=-250 , pos_y=700)
-#
-# mill1=Production(device, 'feed mill', tl, threshold=.4, icon_x=0, icon_y=-200, pos_x=-800, pos_y=-100)
-# mill1.add(product='cow feed', worktime=10, icon_x=-200, icon_y=-200, second_menu=False)
-# mill1.add(product='chicken feed', worktime=5, icon_x=0, icon_y=-250, second_menu=False)
-# mill1.add(product='chicken feed', worktime=5, icon_x=0, icon_y=-250, second_menu=False)
-# mill1.add(product='pig feed', worktime=20, icon_x=-300, icon_y=-125, second_menu=False)
-# mill1.add(product='chicken feed', worktime=5, icon_x=0, icon_y=-250, second_menu=False)
-# mill1.add(product='chicken feed', worktime=5, icon_x=0, icon_y=-250, second_menu=False)
-# mill1.start()
-
-# coop=Pen(device, tl, animal='chicken', product='egg', eattime=20, threshold=.7, size=300, icon_x=0, icon_y=-100, pos_x=-1000, pos_y=200)
-
-# tl.start()
-
 class MainApp(Tk):
     def __init__(self):
         self.root = Tk.__init__(self)
@@ -42,19 +20,21 @@ class MainApp(Tk):
         self.device.output.show=self.output.show.get
         self.output.grid(row=1, column=1)
         self.buttons.grid(row=2,column=1)
-        self.crops.add('wheat', amount=2, lok_x=4, lok_y=-2)
+        self.crops.add('wheat', amount=3, lok_x=4, lok_y=-2)
         self.crops.add('corn', amount=6, lok_x=-3, lok_y=-3)
         self.crops.add('soy', amount=5, lok_x=-6, lok_y=-3)
-        self.crops.add('sugar cane', amount=5, lok_x=0, lok_y=-3)
+        self.crops.add('sugar cane', amount=4, lok_x=0, lok_y=-3)
         self.crops.add('carrot', amount=3, lok_x=-9, lok_y=-3)
         self.pens.add('chicken', amount=6, lok_x=-13, lok_y=2)
+        self.pens.add('chicken', amount=6, lok_x=-12, lok_y=6)
         self.pens.add('cow', amount=5, lok_x=-8, lok_y=3)
         self.pens.add('pig', amount=5, lok_x=-13, lok_y=-3)
         self.stations.add('feed_mill', lok_x=-3, lok_y=4)
+        self.stations.add('feed_mill', lok_x=0, lok_y=-8)
         self.stations.add('dairy', lok_x=-7, lok_y=8)
         self.stations.add('bakery', lok_x=3, lok_y=10)
-        self.stations.add('bbq_grill', lok_x=2, lok_y=14)
-        self.stations.add('sugar_mill', lok_x=-3, lok_y=13)
+        self.stations.add('bbq_grill', lok_x=2, lok_y=10)
+        self.stations.add('sugar_mill', lok_x=-3, lok_y=10)
         self.stations.add('popcorn_pot', lok_x=-3, lok_y=10)
 
     def start(self):
