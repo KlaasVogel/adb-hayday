@@ -198,7 +198,7 @@ class Adb_Device():
 
     def swipe(self, x1, y1, x2, y2, speed=300):
         self.device.shell(f'input swipe {x1} {y1} {x2} {y2} {speed}')
-        sleep(.1)
+        sleep(.3)
 
     def load_screenCap(self):
         screencap = self.device.screencap()

@@ -63,7 +63,9 @@ class Tasklist(dict):
     def removeWish(self, product, amount):
         if product in self.wishlist:
             self.wishlist[product]['amount']-=amount
-            self.wishlist[product]['scheduled']-=amount
+    def removeSchedule(self, product, amount):
+        if product in self.wishlist:
+            self.wishlist[product]['scheduled']-=amount        
     def printlist(self):
         cur_time=int(time())
         if not len(self):

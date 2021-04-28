@@ -6,7 +6,10 @@ from adb import Template
 
 class HD():
     home=[Template(path.join('images','home_C.png'))]
-    cross=[Template(path.join('images','X.png'))]
+    cross=[Template(path.join('images','X_C_.png'))]
+    plus=[Template(path.join('images','plus_C_.png'))]
+    grass=[Template(path.join('images','grass_C_.png'))]
+    diamond=[Template(path.join('images','diamond_small.png'))]
     def __init__(self,device,product,tasklist,threshold,pos_x,pos_y):
         self.device=device
         self.product=product
@@ -48,7 +51,7 @@ class HD():
         sleep(.2)
     def move_from(self):
         self.device.move(-self.pos_x, -self.pos_y)
-    def check_full(self):
+    def check_cross(self):
         locations=self.device.locate_item(self.cross,.45)
         if len(locations):
             x,y=locations[0]
@@ -56,6 +59,22 @@ class HD():
             sleep(1)
             return True
         return False
+    def check_plus(self):
+        locations=self.device.locate_item(self.plus,.85)
+        if len(locations):
+            return True
+        return False
+    def check_diamond(self):
+        locations=self.device.locate_item(self.diamond,.85)
+        if len(locations):
+            return True
+        return False
+    def click_green(self):
+        print('click on grass')
+        location=self.device.locate_item(self.grass,.45,one=True)
+        if len(location):
+            x,y=location
+            self.device.tap(x,y)
     def open(self, location):
         x,y=location
         self.device.tap(x,y)
@@ -84,13 +103,13 @@ class HD():
         locations=self.check_home()
         count=0
         while not locations or count>=3:
-            if not self.check_full():
+            if not self.check_cross():
                 for x in range(4):
-                    self.device.swipe(200,150,1300,700,100)
-                self.check_full()
+                    self.device.swipe(1300,150,200,700,100)
+                self.check_cross()
                 self.device.zoom_out()
-                self.check_full()
-                self.device.swipe(1300,300,600,400,400)
+                self.check_cross()
+                self.device.swipe(800,450,1000,600,400)
             locations=self.check_home()
             count+=1
         if not locations:
@@ -183,7 +202,7 @@ class Board(HD):
                 checks=self.device.locate_item(self.complete_template,.9)
                 if len(checks):
                     self.collect(checks[0])
-                    nextcheck=.5
+                    nextcheck=.3
                 else:
                     print('update board info')
                     for card in self.cards:
@@ -196,7 +215,7 @@ class Board(HD):
                             print(f'found: {product}')
                             card.add(product)
                         nextcheck=5
-                self.check_full()
+                self.check_cross()
         self.tasklist.addtask(nextcheck,'board',self.image,self.check)
 
 
@@ -218,12 +237,16 @@ class Recipe():
     def create(self):
         self.station.start(self.product, self.icon, self.cooktime)
 
+    def start_collect(self):
+        self.station.collect(self.product,self.amount)
+
 class Station(HD):
     def __init__(self, device, tasklist, station, recipes, threshold, templates, pos_x, pos_y):
         HD.__init__(self, device, station, tasklist, threshold, pos_x, pos_y)
         self.recipes={}
         self.templates=templates
         self.jobs=[]
+        self.scheduled=False
         for product,recipe in recipes.items():
             self.recipes[product]=Recipe(self,product,recipe)
 
@@ -235,41 +258,62 @@ class Station(HD):
 
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
-        if not self.getWaitTime() and len(self.jobs):
+        if not self.getWaitTime() and len(self.jobs) and not self.scheduled:
             print('adding task')
             product=self.jobs.pop(0)
-            self.tasklist.addtask(2, product, self.image, self.recipes[product].create)
+            self.tasklist.addtask(0.2, product, self.image, self.recipes[product].create)
+            self.scheduled=True
 
-    def collect(self):
+    def collect(self,product,amount=1):
         if self.reset_screen():
             self.move_to()
+            if self.check_plus():
+                self.click_green()
             location=self.device.locate_item(self.templates, self.threshold, one=True)
             if len(location):
                 x,y=location
                 self.device.tap(x,y)
                 sleep(.2)
-                self.check_full()
+                if not self.check_cross():
+                    self.tasklist.removeWish(product,amount)
+                    self.tasklist.removeSchedule(product,amount)
+                else:
+                    self.tasklist.addtask(5, product, self.image, self.recipes[product].start_collect)
             self.checkJobs()
+            self.move_from()
         else:
-            self.tasklist.addtask(1, self.product, self.image, self.collect)
+            self.tasklist.addtask(1, product, self.image, self.recipes[product].start_collect)
 
     def start(self,product,icon,cooktime):
         if self.reset_screen():
             self.move_to()
+            if self.check_diamond():
+                self.click_green()
             location=self.device.locate_item(self.templates, self.threshold, one=True)
             if len(location):
+                print(f'found: {self.product}')
                 x,y=location
                 dx,dy=icon
                 self.device.tap(x,y)
-                sleep(.2)
+                print(f"should be opened now")
+                newlocation=self.device.locate_item(self.templates, self.threshold, one=True)
+                x,y = newlocation if len(newlocation) else location
                 self.device.swipe(x+dx,y+dy,x,y,300)
-                sleep(.2)
-                if self.check_full():
+                self.scheduled=False
+                sleep(.1)
+                if self.check_cross(): #could not find ingredients, wait 2 minutes
+                    print('not enough ingredients')
+                    self.setWaittime(2)
                     self.recipes[product].addJob()
+                    self.move_from()
+                    return
                 self.setWaittime(cooktime)
-                self.tasklist.addtask(cooktime, self.product, self.image, self.collect)
-        else:
-            self.tasklist.addtask(1, self.product, self.image, self.collect)
+                self.tasklist.addtask(cooktime, self.product, self.image, self.recipes[product].start_collect)
+                self.move_from()
+                return
+            self.move_from()
+        #something went wrong, try again in one minute
+        self.tasklist.addtask(1, self.product, self.image, self.recipes[product].create)
 
 class Stations(list):
     device=None
@@ -285,8 +329,8 @@ class Stations(list):
         'cheese':{'amount':1, 'cooktime':60, 'icon': [-325,-55], 'ingredients': {'milk': 3}},
         'cheese2':{'amount':1, 'cooktime':120, 'icon': [-365,90], 'ingredients': {}}   }}
     sugar_mill={'threshold':.75,'recipes':{
-        'brown sugar':{'amount':1, 'cooktime':60, 'icon': [-110,-130], 'ingredients': {'sugarcane': 1}},
-        'sugar2':{'amount':1, 'cooktime':120, 'icon': [-245, 0], 'ingredients': {}}   }}
+        'brown sugar':{'amount':1, 'cooktime':20, 'icon': [-110,-130], 'ingredients': {'sugarcane': 1}},
+        'white sugar':{'amount':1, 'cooktime':40, 'icon': [-245, 0], 'ingredients': {'sugarcane': 2}}   }}
     popcorn_pot={'threshold':.75,'recipes':{
         'popcorn':{'amount':1, 'cooktime':30, 'icon': [-135,-155], 'ingredients': {'corn': 2}},
         'pop2':{'amount':1, 'cooktime':120, 'icon': [-270,-25], 'ingredients': {}}   }}
@@ -315,9 +359,9 @@ class Stations(list):
 class Pens(list):
     device=None
     tasklist=None
-    chicken={'eattime':20, 'product':'egg', 'food':'chicken feed','threshold':.75,'icon_x':-120,'icon_y':-215}
-    cow={'eattime':60, 'product':'milk', 'food':'cow feed','threshold':.75,'icon_x':-100,'icon_y':-215}
-    pig={'eattime':240, 'product':'bacon', 'food':'pig feed','threshold':.75,'icon_x':-115,'icon_y':-285}
+    chicken={'eattime':20, 'product':'egg', 'food':'chicken feed','threshold':.75,'icon':[-120,-215],'margin':[150,75]}
+    cow={'eattime':60, 'product':'milk', 'food':'cow feed','threshold':.75,'icon':[-100,-215],'margin':[250,75]}
+    pig={'eattime':240, 'product':'bacon', 'food':'pig feed','threshold':.75,'icon':[-115,-285],'margin':[350,75]}
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist
@@ -329,25 +373,27 @@ class Pens(list):
         if hasattr(self,animal):
             if animal not in self.pen_templates:
                 self.pen_templates[animal]=HD.loadTemplates('pens',animal)
-                self.full_templates[animal]=HD.loadTemplates('animals',f'{animal}_full')
-                self.empty_templates[animal]=HD.loadTemplates('animals',f'{animal}_empty')
+                self.full_templates[animal]=HD.loadTemplates(path.join('animals',animal),f'{animal}_full')
+                self.empty_templates[animal]=HD.loadTemplates(path.join('animals',animal),f'{animal}_empty')
             data=getattr(self,animal)
             self.append(Pen(self.device, self.tasklist, animal, amount,
-                            data['food'], data['product'], data['eattime'], data['threshold'], data['icon_x'], data['icon_y'],
+                            data['food'], data['product'], data['eattime'], data['threshold'], data['icon'], data['margin'],
                             self.pen_templates[animal], self.full_templates[animal], self.empty_templates[animal], pos_x, pos_y))
 
 class Pen(HD):
-    def __init__(self, device, tasklist, animal, amount, food, product, eattime, threshold, icon_x, icon_y, temp_pen, temp_full, temp_empty, pos_x=0, pos_y=0):
+    def __init__(self, device, tasklist, animal, amount, food, product, eattime, threshold, icon, margin, temp_pen, temp_full, temp_empty, pos_x=0, pos_y=0):
         HD.__init__(self, device, product, tasklist, threshold, pos_x, pos_y)
         self.animal=animal
         self.amount=amount
         self.food=food
-        self.icon_feed=[icon_x,icon_y]
-        self.icon_collect=[icon_x-160,icon_y+140]
+        self.icon_feed=icon
+        self.icon_collect=[icon[0]-160,icon[1]+140]
+        self.margin=margin
         self.eattime=eattime
         self.temp_pen=temp_pen
         self.temp_full=temp_full
         self.temp_empty=temp_empty
+        self.scheduled=False
         self.tasklist.addProduct(product, self.addJob, self.getJobTime)
 
     def getJobTime(self):
@@ -363,20 +409,22 @@ class Pen(HD):
 
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
-        if not self.getWaitTime():
+        if not self.getWaitTime() and not self.scheduled:
             print('adding task')
             self.jobs-=1
-            self.tasklist.addtask(1, self.animal, self.image, self.collect)
+            self.tasklist.addtask(0.1, self.animal, self.image, self.collect)
+            self.scheduled=True
 
     def feed(self,animals_full):
         print('feeding')
         x,y=animals_full[0]
         dx,dy=self.icon_feed
         animals= self.device.locate_item(self.temp_empty,.45, all=True)
-        waypoints = animals_full + self.device.getClose(animals, x, y, 300, 75)
+        waypoints = animals_full + self.device.getClose(animals, x, y, *self.margin)
         self.tap_and_trace(waypoints, dx, dy)
         sleep(.3)
-        if self.check_full():
+        if self.check_cross():
+            self.setWaittime(4)
             self.tasklist.addtask(4, self.animal, self.image, self.collect)
         else:
             self.setWaittime(self.eattime)
@@ -386,19 +434,22 @@ class Pen(HD):
             self.move_to()
             location=self.device.locate_item(self.temp_pen, self.threshold, one=True)
             if len(location):
+                self.scheduled=False
                 x,y=location
-                animals=self.device.locate_item(self.temp_full,.50, all=True)
-                waypoints=[location]+self.device.getClose(animals, x, y, 150,75)
+                animals=self.device.locate_item(self.temp_full,.45, all=True)
+                waypoints=[location]+self.device.getClose(animals, x, y, *self.margin)
                 if animals:
                     dx,dy=self.icon_collect
                     self.tap_and_trace(waypoints, dx, dy)
-                    if not self.check_full():
+                    if not self.check_cross():
                         self.tasklist.removeWish(self.product,self.amount)
                 self.feed(waypoints)
                 self.checkJobs()
+                self.tasklist.removeSchedule(self.product, self.amount)
             self.move_from()
-        else:
-            self.tasklist.addtask(1, self.animal, self.image, self.collect)
+            return
+        #something went wrong
+        self.tasklist.addtask(1, self.animal, self.image, self.collect)
 
 
 class Crops(list):
@@ -457,7 +508,7 @@ class Crop(HD):
         if not self.getWaitTime():
             print('adding task')
             self.jobs-=1
-            self.tasklist.addtask(0.1, self.product, self.image, self.harvest)
+            self.tasklist.addtask(2, self.product, self.image, self.harvest)
         sleep(5)
 
     def calcLocation(self,location):
@@ -485,7 +536,7 @@ class Crop(HD):
                 waypoints=[icon]+empty_fields
                 self.device.trace(waypoints)
                 sleep(.2)
-                self.check_full()
+                self.check_cross()
             else:
                 print('error!')
             self.setWaittime(self.growtime)
@@ -499,10 +550,9 @@ class Crop(HD):
             if len(fields):
                 dx,dy=self.scythe
                 self.tap_and_trace(fields,dx,dy)
-                sleep(1)
-                if not self.check_full():
+                if not self.check_cross():
                     self.tasklist.removeWish(self.product,self.amount)
-                sleep(1)
+                self.tasklist.removeSchedule(self.product,self.amount)
             self.sow(fields)
             self.checkJobs()
             self.move_from()
