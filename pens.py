@@ -52,7 +52,7 @@ class Pen(HD):
 
     def addJob(self):
         self.jobs+=1
-        self.tasklist.updateWish(self.food, self.amount)
+        self.checkFood()
         self.checkJobs()
         return self.amount
 
@@ -62,8 +62,11 @@ class Pen(HD):
         if self.jobs>0 and not self.scheduled:
             print('adding task')
             self.jobs+=-1
-            self.tasklist.addtask(wait/60+0.1, self.animal, self.image, self.collect)
+            self.tasklist.addtask(wait/60+0.2, self.animal, self.image, self.collect)
             self.scheduled=True
+
+    def checkFood(self):
+        self.tasklist.checkWish(self.food, self.amount)
 
     def feed(self,animals_full):
         print('feeding')
@@ -75,6 +78,7 @@ class Pen(HD):
         sleep(.3)
         if self.check_cross():
             self.setWaittime(4)
+            self.checkFood()
             self.tasklist.addtask(4, self.animal, self.image, self.collect)
             return False
         self.setWaittime(self.eattime)

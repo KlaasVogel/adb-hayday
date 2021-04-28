@@ -200,6 +200,10 @@ class Adb_Device():
         self.device.shell(f'input swipe {x1} {y1} {x2} {y2} {speed}')
         sleep(.3)
 
+    def load_screen_img(self):
+        screenshot_file=path.join('images','screen.png')
+        return cv2.imread(screenshot_file)
+
     def load_screenCap(self):
         screencap = self.device.screencap()
         screenshot_file=path.join('images','screen.png')
@@ -229,6 +233,11 @@ class Adb_Device():
                 list.append(name)
         return list
 
+    def getColor(self,location):
+        x,y=location
+        img=self.load_screen_img()
+        (b,g,r) = img[y,x]
+        return [r,g,b]
 
     def locate_item(self,templates,threshold=0.75,margin=0.05,one=False,offset=[30,16]):
         result_file=path.join('images','result.png')

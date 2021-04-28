@@ -12,6 +12,7 @@ class HD():
     diamond=[Template(path.join('images','diamond_small.png'))]
     again=[Template(path.join('images','try_C_.png'))]
     arrows=[Template(path.join('images','arrows.png'))]
+    contine=[Template(path.join('images','lvl_up_C_.png'))]
 
     def __init__(self,device,product,tasklist,threshold,pos_x,pos_y):
         self.device=device
@@ -68,6 +69,12 @@ class HD():
             x,y=locations[0]
             self.device.tap(x,y)
             sleep(1)
+    def check_connection(self):
+        locations=self.device.locate_item(self.continue,.75)
+        if len(locations):
+            x,y=locations[0]
+            self.device.tap(x,y)
+            sleep(1)
     def check_plus(self):
         locations=self.device.locate_item(self.plus,.85)
         if len(locations):
@@ -109,7 +116,6 @@ class HD():
         locations=self.device.locate_item(self.home,.75)
         if not len(locations):
             print('ohoh')
-            sleep(1)
             return False
         return locations
     def reset_screen(self):
@@ -119,6 +125,7 @@ class HD():
         while not locations or count>=3:
             self.check_connection()
             self.check_moved()
+            self.check_lvl_up()
             if not self.check_cross():
                 for x in range(4):
                     self.device.swipe(1300,150,200,700,100)
@@ -156,28 +163,17 @@ class Card():
         if product not in self.requests:
             self.requests[product] = {"scheduled":1}
             self.tasklist.updateWish(product)
-        self.requests[product]["done"]=False
-        if self.tasklist.getWish(product) <=0:
+        if self.tasklist.getWish(product) <= 0:
             self.requests[product]["scheduled"]+=1
             self.tasklist.updateWish(product)
         status=self.requests[product]["scheduled"]-self.tasklist.getWish(product)
         print(f"status wish {product}: {status}")
     def reset(self):
-        self.setdone()
-        self.checkDone()
         self.requests = {}
-    def setdone(self):
-        for request,data in self.requests.items():
-            data["done"]=True
-    def checkDone(self):
-        for request,data in self.requests.items():
-            if data["done"]:
-                self.tasklist.removeWish(request, data['scheduled'])
-                self.requests[request]["scheduled"]=0
     def __repr__(self):
         products=[]
         for product,data in self.requests.items():
-            text=f"{product} - done" if data["done"] else f"{product} - {data['scheduled']}"
+            text=f"{product} - {data['scheduled']}"
             products.append(text)
         return "Cards:"+", ".join(products)
 
@@ -232,7 +228,6 @@ class Board(HD):
                 else:
                     print('update board info')
                     for card in self.cards:
-                        card.setdone()
                         x,y=card.location
                         self.device.tap(x,y)
                         sleep(.1)

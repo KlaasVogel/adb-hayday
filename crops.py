@@ -8,11 +8,13 @@ from adb import Template
 class Crops(list):
     device=None
     tasklist=None
-    wheat={'growtime':2, 'threshold':.85, 'field':0, 'icon_x':366, 'icon_y':-255}
-    corn={'growtime':5, 'threshold':.85, 'field':1, 'icon_x':238, 'icon_y':-135}
-    soy={'growtime':20, 'threshold':.85, 'field':0, 'icon_x':313, 'icon_y':-410}
-    sugarcane={'growtime':30, 'threshold':.85, 'field':0, 'icon_x':135, 'icon_y':-305}
-    carrot={'growtime':10, 'threshold':.85, 'field':0, 'icon_x':15, 'icon_y':-125}
+    wheat=    {'growtime':  2, 'threshold':.85, 'field':0, 'set':1, 'icon':[366, -255]}
+    corn=     {'growtime':  5, 'threshold':.90, 'field':1, 'set':1, 'icon':[238, -135]}
+    carrot=   {'growtime': 10, 'threshold':.90, 'field':1, 'set':1, 'icon':[ 15, -125]}
+    soy=      {'growtime': 20, 'threshold':.85, 'field':0, 'set':1, 'icon':[313, -410]}
+    sugarcane={'growtime': 30, 'threshold':.90, 'field':0, 'set':1, 'icon':[130, -310]}
+    indigo=   {'growtime':120, 'threshold':.90, 'field':0, 'set':2, 'icon':[366, -255]}
+    pumpkin=  {'growtime': 30, 'threshold':.90, 'field':0, 'set':2, 'icon':[238, -135]}
 
     templates={}
     empty_templates=[]
@@ -29,17 +31,18 @@ class Crops(list):
                 self.templates[crop]=HD.loadTemplates('crops',crop)
             data=getattr(self,crop)
             self.append(Crop(self.device, crop, amount, self.tasklist,
-                             data['growtime'], data['threshold'], data['icon_x'], data['icon_y'],
+                             data['growtime'], data['threshold'], data['set'], data['icon'],
                              self.templates[crop],self.empty_templates[data['field']],self.switch_template,
                              pos_x, pos_y))
 
 class Crop(HD):
-    def __init__(self, device, product, amount, tasklist, growtime, threshold, icon_x, icon_y, temp_full, temp_empty, temp_switch, pos_x=0, pos_y=0):
+    def __init__(self, device, product, amount, tasklist, growtime, threshold, set, icon, temp_full, temp_empty, temp_switch, pos_x=0, pos_y=0):
         HD.__init__(self, device, product, tasklist, threshold, pos_x, pos_y)
         self.growtime=growtime
         self.scheduled=False
         self.amount=amount
-        self.icon=[icon_x,icon_y]
+        self.icon=icon
+        self.set=set
         self.switch=[-485,120]
         self.scythe=[-190,-80]
         self.temp_full=temp_full
@@ -64,7 +67,7 @@ class Crop(HD):
             print('adding task')
             self.jobs+=-1
             self.scheduled=True
-            self.tasklist.addtask(wait/60+0.3, self.product, self.image, self.harvest)
+            self.tasklist.addtask(wait/60+0.1, self.product, self.image, self.harvest)
 
     def calcLocation(self,location):
         x,y=location
@@ -74,22 +77,31 @@ class Crop(HD):
         return [x2,y2]
 
     def sow(self,fields):
+        x,y=fields[0] if len(fields) else [800,450]
         print('sowing')
         empty_fields=self.device.locate_item(self.temp_empty, .9)
-        # waypoints=fields+empty_fields
-        if len(empty_fields):
-            x,y=empty_fields[0]
+        waypoints=self.device.getClose(empty_fields, x,y,300,200)+fields
+        if len(waypoints):
+            x,y=waypoints[0]
             self.device.tap(x,y)
             sleep(.2)
-            switch_location=self.device.locate_item(self.temp_switch, .85)
+            switch_location = self.device.locate_item(self.temp_switch, .85)
             if len(switch_location):
                 x,y=switch_location[0]
+                set_location=[x+90,y]
+                (r,g,b)=self.device.getColor(set_location)
+                print(f"colors ({x+90},{y}): {r},{g},{b}")
+                set=1 if (r>200 and g>200 and b>150) else 2
+                print(f"set: {set}    needs to be: {self.set}")
+                if set != self.set:
+                    self.device.tap(x,y)
+                    sleep(.2)
                 new_field_location=self.calcLocation(switch_location[0])
-                self.device.correct(empty_fields,[new_field_location])
+                self.device.correct(waypoints,[new_field_location])
                 dx,dy=self.icon
                 icon=[x+dx,y+dy]
-                waypoints=[icon]+empty_fields
-                self.device.trace(waypoints)
+                points=[icon]+waypoints
+                self.device.trace(points)
                 sleep(.2)
                 self.check_cross()
             else:

@@ -16,13 +16,13 @@ class Wishlist(dict):
         if product in self:
             return self[product].get("amount",0)
         return 0
-    def checkWish(self,product):
+    def checkWish(self,product,amount):
         if product in self:
-            wish=self[product].get("amount",0)
-            if wish>0:
-                return True
-        return False
-
+            wish,scheduled=(self[product]['amount'],self[product]['scheduled'])
+            if ((scheduled+wish)<amount):
+                self[product]["amount"]=amount-scheduled
+            return True
+        self.add(product,amount)
 
 class Tasklist(dict):
     def __init__(self):
@@ -63,11 +63,11 @@ class Tasklist(dict):
     def removeWish(self, product, amount):
         if product in self.wishlist:
             self.wishlist[product]['amount']-=amount
-            if self.wishlist[product]['amount']<=0:
-                self.wishlist[product]['scheduled']=0
     def removeSchedule(self, product, amount):
         if product in self.wishlist:
             self.wishlist[product]['scheduled']-=amount
+        if self.wishlist[product]['scheduled']<0:
+            self.wishlist[product]['scheduled']=0
     def printlist(self):
         cur_time=int(time())
         if not len(self):

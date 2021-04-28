@@ -70,8 +70,8 @@ class Station(HD):
             print('adding task')
             product=self.jobs.pop(0)
             print(f"new job: {product} - jobs: {self.jobs}")
-            sleep(4)
-            self.tasklist.addtask(wait/60+0.2, product, self.image, self.recipes[product].create)
+            sleep(2)
+            self.tasklist.addtask(wait/60+0.3, product, self.image, self.recipes[product].create)
             self.scheduled=True
 
     def collect(self,product,amount=1):
@@ -95,6 +95,7 @@ class Station(HD):
             self.tasklist.addtask(1, product, self.image, self.recipes[product].start_collect)
 
     def start(self,product,icon,cooktime):
+        recipe=self.recipes[product]
         if self.reset_screen():
             self.move_to()
             if self.check_diamond():
@@ -115,12 +116,13 @@ class Station(HD):
                     sleep(.1)
                     if self.check_cross(): #could not find ingredients, wait 2 minutes
                         print('not enough ingredients')
+                        recipe.checkIngredients()
                         self.setWaittime(2)
-                        self.recipes[product].addJob()
+                        recipe.addJob()
                         self.move_from()
                         return
                     self.setWaittime(cooktime)
-                    self.tasklist.addtask(cooktime, self.product, self.image, self.recipes[product].start_collect)
+                    self.tasklist.addtask(cooktime, self.product, self.image, recipe.start_collect)
                     self.click_green()
                     self.move_from()
                     return
@@ -129,7 +131,7 @@ class Station(HD):
         #something went wrong, try again in one minute
         print('something went wrong')
         sleep(2)
-        self.tasklist.addtask(1, self.product, self.image, self.recipes[product].create)
+        self.tasklist.addtask(1, self.product, self.image, recipe.create)
 
 
 class Recipe():
@@ -142,10 +144,13 @@ class Recipe():
 
     def addJob(self):
         self.station.jobs.append(self.product)
-        for ingredient,amount in self.ingredients.items():
-            self.station.tasklist.updateWish(ingredient, amount)
+        self.checkIngredients()
         self.station.checkJobs()
         return self.amount
+
+    def checkIngredients(self):
+        for ingredient,amount in self.ingredients.items():
+            self.station.tasklist.checkWish(ingredient, amount)
 
     def create(self):
         self.station.start(self.product, self.icon, self.cooktime)
