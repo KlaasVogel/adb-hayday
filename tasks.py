@@ -64,7 +64,7 @@ class Tasklist(dict):
         if product in self.wishlist:
             self.wishlist[product]['amount']-=amount
             if self.wishlist[product]['amount']<=0:
-                self.wishlist.pop(product)
+                self.wishlist[product]['scheduled']=0
     def removeSchedule(self, product, amount):
         if product in self.wishlist:
             self.wishlist[product]['scheduled']-=amount

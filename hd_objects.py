@@ -172,8 +172,8 @@ class Card():
     def checkDone(self):
         for request,data in self.requests.items():
             if data["done"]:
-                self.tasklist.removeWish(product, data['scheduled'])
-                self.requests[product]["scheduled"]=0
+                self.tasklist.removeWish(request, data['scheduled'])
+                self.requests[request]["scheduled"]=0
     def __repr__(self):
         products=[]
         for product,data in self.requests.items():

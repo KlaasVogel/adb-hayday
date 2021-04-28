@@ -30,7 +30,7 @@ class MainApp(Tk):
         self.pens.add('cow', amount=5, lok_x=-8, lok_y=3)
         self.pens.add('pig', amount=5, lok_x=-13, lok_y=-3)
         self.stations.add('feed_mill', lok_x=-3, lok_y=4)
-        self.stations.add('feed_mill', lok_x=0, lok_y=-8)
+        self.stations.add('feed_mill', lok_x=-8, lok_y=-8)
         self.stations.add('dairy', lok_x=-7, lok_y=8)
         self.stations.add('bakery', lok_x=3, lok_y=10)
         self.stations.add('bbq_grill', lok_x=2, lok_y=10)
