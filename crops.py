@@ -10,11 +10,11 @@ class Crops(list):
     tasklist=None
     wheat=    {'growtime':  2, 'threshold':.85, 'field':0, 'set':1, 'icon':[366, -255]}
     corn=     {'growtime':  5, 'threshold':.90, 'field':1, 'set':1, 'icon':[238, -135]}
-    carrot=   {'growtime': 10, 'threshold':.90, 'field':1, 'set':1, 'icon':[ 15, -125]}
+    carrot=   {'growtime': 10, 'threshold':.90, 'field':0, 'set':1, 'icon':[ 15, -125]}
     soy=      {'growtime': 20, 'threshold':.85, 'field':0, 'set':1, 'icon':[313, -410]}
-    sugarcane={'growtime': 30, 'threshold':.90, 'field':0, 'set':1, 'icon':[130, -310]}
+    sugarcane={'growtime': 30, 'threshold':.90, 'field':1, 'set':1, 'icon':[130, -310]}
     indigo=   {'growtime':120, 'threshold':.90, 'field':0, 'set':2, 'icon':[366, -255]}
-    pumpkin=  {'growtime': 30, 'threshold':.90, 'field':0, 'set':2, 'icon':[238, -135]}
+    pumpkin=  {'growtime':180, 'threshold':.90, 'field':1, 'set':2, 'icon':[238, -135]}
 
     templates={}
     empty_templates=[]
@@ -63,11 +63,14 @@ class Crop(HD):
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
         wait = self.getWaitTime()
-        if self.jobs>0 and not self.scheduled:
-            print('adding task')
-            self.jobs+=-1
-            self.scheduled=True
-            self.tasklist.addtask(wait/60+0.1, self.product, self.image, self.harvest)
+        if not self.scheduled:
+            if self.jobs > 0 :
+                print('adding task')
+                self.jobs+=-1
+                self.scheduled=True
+                self.tasklist.addtask(wait/60+0.1, f'harvest {self.product}', self.image, self.harvest)
+                return
+            self.tasklist.reset(self.product)
 
     def calcLocation(self,location):
         x,y=location
@@ -125,4 +128,4 @@ class Crop(HD):
             self.checkJobs()
             self.move_from()
         else:
-            self.tasklist.addtask(1,self.product,self.image,self.harvest)
+            self.tasklist.addtask(1,f'harvest {self.product}',self.image,self.harvest)

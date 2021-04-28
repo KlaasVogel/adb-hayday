@@ -53,12 +53,16 @@ class Tasklist(dict):
             idx=times.index(mintime)
             return self.products[product][idx]['setjob']()
         return 0
+    def reset(self,product):
+        print(f"resetting {product}:")
+        sleep(5)
+        self.wishlist.pop(product)
     def checkWishes(self):
         joblist=[]
         for product,data in self.wishlist.items():
             if data['scheduled']-data['amount']<0:
                 joblist.append(product)
-        for product in  joblist:
+        for product in joblist:
             self.wishlist[product]['scheduled']+=self.setJob(product)
     def removeWish(self, product, amount):
         if product in self.wishlist:

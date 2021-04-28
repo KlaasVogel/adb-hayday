@@ -59,11 +59,14 @@ class Pen(HD):
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
         wait=self.getWaitTime()
-        if self.jobs>0 and not self.scheduled:
-            print('adding task')
-            self.jobs+=-1
-            self.tasklist.addtask(wait/60+0.2, self.animal, self.image, self.collect)
-            self.scheduled=True
+        if not self.scheduled:
+            if self.jobs>0 :
+                print('adding task')
+                self.jobs+=-1
+                self.tasklist.addtask(wait/60+0.2, self.animal, self.image, self.collect)
+                self.scheduled=True
+                return
+            self.tasklist.reset(self.product)
 
     def checkFood(self):
         self.tasklist.checkWish(self.food, self.amount)

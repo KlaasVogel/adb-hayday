@@ -28,6 +28,8 @@ class MainApp(Tk):
         self.crops.add('soy', amount=4, lok_x=-6, lok_y=-3)
         self.crops.add('sugarcane', amount=4, lok_x=3, lok_y=-1)
         self.crops.add('carrot', amount=4, lok_x=-9, lok_y=-3)
+        self.crops.add('indigo', amount=4, lok_x=-11, lok_y=7)
+        self.crops.add('pumpkin', amount=3, lok_x=-14, lok_y=8)
         self.pens.add('chicken', amount=6, lok_x=-13, lok_y=2)
         self.pens.add('chicken', amount=6, lok_x=5, lok_y=-6)
         self.pens.add('cow', amount=5, lok_x=-8, lok_y=3)
