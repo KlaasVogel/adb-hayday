@@ -106,7 +106,7 @@ class HD():
             return True
         return False
     def check_home(self):
-        locations=self.device.locate_item(self.home,.80)
+        locations=self.device.locate_item(self.home,.75)
         if not len(locations):
             print('ohoh')
             sleep(1)
@@ -163,10 +163,17 @@ class Card():
         status=self.requests[product]["scheduled"]-self.tasklist.getWish(product)
         print(f"status wish {product}: {status}")
     def reset(self):
+        self.setdone()
+        self.checkDone()
         self.requests = {}
     def setdone(self):
         for request,data in self.requests.items():
             data["done"]=True
+    def checkDone(self):
+        for request,data in self.requests.items():
+            if data["done"]:
+                self.tasklist.removeWish(product, data['scheduled'])
+                self.requests[product]["scheduled"]=0
     def __repr__(self):
         products=[]
         for product,data in self.requests.items():
@@ -277,10 +284,11 @@ class Station(HD):
 
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
-        if not self.getWaitTime() and len(self.jobs) and not self.scheduled:
+        wait=self.getWaitTime()
+        if len(self.jobs) and not self.scheduled:
             print('adding task')
             product=self.jobs.pop(0)
-            self.tasklist.addtask(0.2, product, self.image, self.recipes[product].create)
+            self.tasklist.addtask(wait/60+0.2, product, self.image, self.recipes[product].create)
             self.scheduled=True
 
     def collect(self,product,amount=1):
@@ -330,12 +338,14 @@ class Station(HD):
                         return
                     self.setWaittime(cooktime)
                     self.tasklist.addtask(cooktime, self.product, self.image, self.recipes[product].start_collect)
+                    self.click_green()
                     self.move_from()
                     return
+            self.click_green()
             self.move_from()
         #something went wrong, try again in one minute
         print('something went wrong')
-        sleep(5)
+        sleep(2)
         self.tasklist.addtask(1, self.product, self.image, self.recipes[product].create)
 
 class Stations(list):
@@ -432,10 +442,11 @@ class Pen(HD):
 
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
-        if not self.getWaitTime() and self.jobs>0 and not self.scheduled:
+        wait=self.getWaitTime()
+        if self.jobs>0 and not self.scheduled:
             print('adding task')
             self.jobs-=1
-            self.tasklist.addtask(0.1, self.animal, self.image, self.collect)
+            self.tasklist.addtask(wait/60+0.1, self.animal, self.image, self.collect)
             self.scheduled=True
 
     def feed(self,animals_full):
@@ -532,11 +543,12 @@ class Crop(HD):
 
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
-        if not self.getWaitTime() and self.jobs>0 and not self.scheduled:
+        wait = self.getWaitTime()
+        if self.jobs>0 and not self.scheduled:
             print('adding task')
             self.jobs-=1
             self.scheduled=True
-            self.tasklist.addtask(2, self.product, self.image, self.harvest)
+            self.tasklist.addtask(wait/60+0.3, self.product, self.image, self.harvest)
 
     def calcLocation(self,location):
         x,y=location
