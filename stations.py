@@ -14,25 +14,25 @@ class Stations(list):
         'pig feed':{'amount':3, 'cooktime':20, 'icon': [-350,-110], 'ingredients': {'carrot': 2, 'soy':1}},
         'sheep feed':{'amount':3, 'cooktime':30, 'icon': [-390,50], 'ingredients': {'wheat': 2, 'soy':1}}   }}
     dairy={'threshold':.75,'recipes':{
-        'cream':{'amount':1, 'cooktime':20, 'icon': [-15,-250], 'ingredients': {'milk': 1}},
-        'butter':{'amount':1, 'cooktime':30, 'icon': [-185,-175], 'ingredients': {'milk': 2}},
-        'cheese':{'amount':1, 'cooktime':60, 'icon': [-325,-55], 'ingredients': {'milk': 3}},
-        'cheese2':{'amount':1, 'cooktime':120, 'icon': [-365,90], 'ingredients': {}}   }}
+        'cream':{'amount':1, 'cooktime':20, 'icon': [-25,-270], 'ingredients': {'milk': 1}},
+        'butter':{'amount':1, 'cooktime':30, 'icon': [-185,-195], 'ingredients': {'milk': 2}},
+        'cheese':{'amount':1, 'cooktime':60, 'icon': [-330,-75], 'ingredients': {'milk': 3}},
+        'cheese2':{'amount':1, 'cooktime':120, 'icon': [-365,75], 'ingredients': {}}   }}
     sugar_mill={'threshold':.75,'recipes':{
         'brown sugar':{'amount':1, 'cooktime':20, 'icon': [-95,-220], 'ingredients': {'sugarcane': 1}},
         'white sugar':{'amount':1, 'cooktime':40, 'icon': [-265, -105], 'ingredients': {'sugarcane': 2}}   }}
     popcorn_pot={'threshold':.75,'recipes':{
-        'popcorn':{'amount':1, 'cooktime':30, 'icon': [-135,-155], 'ingredients': {'corn': 2}},
-        'buttered popcorn':{'amount':1, 'cooktime':60, 'icon': [-270,-25], 'ingredients': {'corn':2, 'butter':1}}   }}
+        'popcorn':{'amount':1, 'cooktime':30, 'icon': [-115,-235], 'ingredients': {'corn': 2}},
+        'buttered popcorn':{'amount':1, 'cooktime':60, 'icon': [-265,-130], 'ingredients': {'corn':2, 'butter':1}}   }}
     bbq_grill={'threshold':.75,'recipes':{
         'pancake':{'amount':1, 'cooktime':30, 'icon': [-127,-230], 'ingredients': {'egg': 3, 'brown sugar':1}},
         'bacon and eggs':{'amount':1, 'cooktime':60, 'icon': [-285,-120], 'ingredients': {'egg': 4,'bacon':2}},
         'burger':{'amount':1, 'cooktime':120, 'icon': [-345, 25], 'ingredients': {}}   }}
     bakery={'threshold':.75,'recipes':{
-        'bread':{'amount':1, 'cooktime':5, 'icon': [-70,-270], 'ingredients': {'wheat': 3}},
-        'cake':{'amount':1, 'cooktime':30, 'icon': [-240,-210], 'ingredients': {'corn': 2, 'egg':2}},
-        'cookie':{'amount':1, 'cooktime':60, 'icon': [-370,-85], 'ingredients': {'wheat': 2, 'egg':2, 'brown sugar':1}},
-        'cupcake':{'amount':1, 'cooktime':120, 'icon': [-415, 65], 'ingredients': {}}   }}
+        'bread':{'amount':1, 'cooktime':5, 'icon': [-60,-298], 'ingredients': {'wheat': 3}},
+        'cake':{'amount':1, 'cooktime':30, 'icon': [-233,-228], 'ingredients': {'corn': 2, 'egg':2}},
+        'cookie':{'amount':1, 'cooktime':60, 'icon': [-363,-106], 'ingredients': {'wheat': 2, 'egg':2, 'brown sugar':1}},
+        'cupcake':{'amount':1, 'cooktime':120, 'icon': [-405, 48], 'ingredients': {}}   }}
     pie_oven={'threshold':.75,'recipes':{
         'carrot pie':{'amount':1, 'cooktime':60, 'icon': [-128,-248], 'ingredients': {'carrot': 3, 'egg':1, 'wheat':2}},
         'pumpkin pie':{'amount':1, 'cooktime':120, 'icon': [-286,-141], 'ingredients': {'pumpkin': 3, 'egg':1, 'wheat':2}},
@@ -102,7 +102,7 @@ class Station(HD):
                     self.tasklist.removeSchedule(product,amount)
                     self.orderJobs()
                 else:
-                    self.tasklist.addtask(5, product, self.image, self.recipes[product].start_collect)
+                    self.tasklist.addtask(5, product, f'collect {product}', self.recipes[product].start_collect)
             self.checkJobs()
             self.move_from()
         else:
@@ -125,7 +125,7 @@ class Station(HD):
                 if self.check_diamond():
                     newlocation=self.device.locate_item(self.templates, self.threshold, one=True)
                     x,y = newlocation if len(newlocation) else location
-                    self.device.swipe(x+dx,y+dy,x,y,300)
+                    self.device.swipe(x+dx,y+dy,x,y+215,300)
                     self.scheduled=False
                     sleep(.1)
                     if self.check_cross(): #could not find ingredients, wait 2 minutes
@@ -136,7 +136,7 @@ class Station(HD):
                         self.move_from()
                         return
                     self.setWaittime(cooktime)
-                    self.tasklist.addtask(cooktime+0.5, self.product, self.image, recipe.start_collect)
+                    self.tasklist.addtask(cooktime+0.5, f'collect {product}', self.image, recipe.start_collect)
                     self.click_green()
                     self.move_from()
                     return
@@ -145,7 +145,7 @@ class Station(HD):
         #something went wrong, try again in one minute
         print('something went wrong')
         sleep(2)
-        self.tasklist.addtask(1, self.product, self.image, recipe.create)
+        self.tasklist.addtask(1, f'{self.product}: create {product}', self.image, recipe.create)
 
 
 class Recipe():

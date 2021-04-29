@@ -9,13 +9,13 @@ import numpy as np
 class Pens(list):
     device=None
     tasklist=None
-    chicken={'eattime':20, 'product':'egg', 'food':'chicken feed','threshold':.75,'icon_feed':[-120,-215],'margin':[150,75],'size':0,'centre':[-10,40]}
-    cow={'eattime':60, 'product':'milk', 'food':'cow feed','threshold':.75,'icon_feed':[-100,-215],'margin':[250,75],'size':1,'centre':[50,40]}
-    pig={'eattime':240, 'product':'bacon', 'food':'pig feed','threshold':.75,'icon_feed':[-115,-285],'margin':[350,75],'size':1,'centre':[-80,25]}
-    sheep={'eattime':360, 'product':'wool', 'food':'sheep feed','threshold':.75,'icon_feed':[-115,-285],'margin':[350,75],'size':1,'centre':[-30,40]}
-    trace_path=[[[0,0],[30,15],[60,0],[30,-15],[0,-30],[-30,-15],[-60,0],[-30,15],[0,30]],
-                [[ 30, 45],[ 60, 30],[ 90, 15],[ 120,0],[ 90,-15],[ 60,-30],[ 30,-45],[0,-60],
-                 [-30,-45],[-60,-30],[-90,-15],[-120,0],[-90, 15],[-60, 30],[-30, 45],[0, 60]  ]]
+    chicken={'eattime':20, 'product':'egg', 'food':'chicken feed','threshold':.75,'icon_feed':[-120,-240],'icon_collect':[-270,-115],'size':0,'centre':[-2,45]}
+    cow={'eattime':60, 'product':'milk', 'food':'cow feed','threshold':.75,'icon_feed':[-100,-240],'icon_collect':[-250,-115],'size':1,'centre':[38,50]}
+    pig={'eattime':240, 'product':'bacon', 'food':'pig feed','threshold':.75,'icon_feed':[-115,-285],'icon_collect':[-265,-185],'size':1,'centre':[-80,25]}
+    sheep={'eattime':360, 'product':'wool', 'food':'sheep feed','threshold':.75,'icon_feed':[-115,-285],'icon_collect':[-265,-185],'size':1,'centre':[-30,75]}
+    trace_path=[[[0,0],[37,19],[74,0],[37,-19],[0,-38],[-37,-19],[-74,0],[-37,19],[0,38],[0,8],[15,0],[0,-8],[-15,0]],
+                [[ 37, 57],[ 74, 38],[ 111, 19],[ 148,0],[ 111,-19],[ 74,-38],[ 37,-57],[0,-76],
+                 [-37,-57],[-74,-38],[-111,-19],[-148,0],[-111, 19],[-74, 38],[-37, 57],[0, 76]  ]]
 
     def __init__(self, device, tasklist):
         self.device=device
@@ -45,9 +45,8 @@ class Pen(HD):
         HD.__init__(self, device, tasklist, data['product'])
         for key,value in data.items():
             setattr(self, key, value)
-        x,y=self.icon_feed
-        self.icon_collect=[x-150,y+100]
         self.tasklist.addProduct(self.product, self.addJob, self.getJobTime)
+        # self.tasklist.addtask(0.05, self.animal, self.image, self.collect)
 
     def getJobTime(self):
         waittime=self.getWaitTime()
@@ -68,7 +67,7 @@ class Pen(HD):
                 print('adding task')
                 self.jobs+=-1
                 self.tasklist.checkWish(self.food, 3)
-                self.tasklist.addtask(wait/60+0.2, self.animal, self.image, self.collect)
+                self.tasklist.addtask(wait/60+0.2, f"collect: {self.product}", self.image, self.collect)
                 self.scheduled=True
                 return
             # self.tasklist.reset(self.product)

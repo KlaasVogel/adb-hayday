@@ -150,7 +150,7 @@ class HD():
         x,y=locations[0]
         self.device.tap(x,y)
         waypoints=[[x+item_x,y+item_y]]+locations
-        self.device.trace(waypoints)
+        self.device.trace(waypoints,size=50)
         sleep(.5)
 
 class Card():
