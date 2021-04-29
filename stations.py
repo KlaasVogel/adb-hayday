@@ -33,6 +33,10 @@ class Stations(list):
         'cake':{'amount':1, 'cooktime':30, 'icon': [-240,-210], 'ingredients': {'corn': 2, 'egg':2}},
         'cookie':{'amount':1, 'cooktime':60, 'icon': [-370,-85], 'ingredients': {'wheat': 2, 'egg':2, 'brown sugar':1}},
         'cupcake':{'amount':1, 'cooktime':120, 'icon': [-415, 65], 'ingredients': {}}   }}
+    pie_oven={'threshold':.75,'recipes':{
+        'carrot pie':{'amount':1, 'cooktime':60, 'icon': [-128,-248], 'ingredients': {'carrot': 3, 'egg':1, 'wheat':2}},
+        'pumpkin pie':{'amount':1, 'cooktime':120, 'icon': [-286,-141], 'ingredients': {'pumpkin': 3, 'egg':1, 'wheat':2}},
+        'apple pie':{'amount':1, 'cooktime':0, 'icon': [-3353,6], 'ingredients': {}} }}
 
     def __init__(self, device, tasklist):
         self.device=device
@@ -122,7 +126,7 @@ class Station(HD):
                         self.move_from()
                         return
                     self.setWaittime(cooktime)
-                    self.tasklist.addtask(cooktime, self.product, self.image, recipe.start_collect)
+                    self.tasklist.addtask(cooktime+0.5, self.product, self.image, recipe.start_collect)
                     self.click_green()
                     self.move_from()
                     return

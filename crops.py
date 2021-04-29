@@ -109,7 +109,10 @@ class Crop(HD):
                 self.check_cross()
             else:
                 print('error!')
-            self.setWaittime(self.growtime)
+                wait=5 if self.growtime>5 else self.growtime
+                self.setWaittime(wait)
+                return
+            self.setWaittime(self.growtime+0.5)
 
     def harvest(self):
         if self.reset_screen():

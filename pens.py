@@ -75,7 +75,7 @@ class Pen(HD):
         print('feeding')
         x,y=animals_full[0]
         dx,dy=self.icon_feed
-        animals= self.device.locate_item(self.temp_empty,.45, offset=[5,5])
+        animals= self.device.locate_item(self.temp_empty,.45, offset=[3,3])
         waypoints = animals_full + self.device.getClose(animals, x, y, *self.margin)
         self.tap_and_trace(waypoints, dx, dy)
         sleep(.3)
@@ -95,7 +95,7 @@ class Pen(HD):
             if len(location):
                 self.scheduled=False
                 x,y=location
-                animals=self.device.locate_item(self.temp_full,.45, offset=[4,4])
+                animals=self.device.locate_item(self.temp_full,.45, offset=[3,3])
                 waypoints=[location]+self.device.getClose(animals, x, y, *self.margin)
                 if animals:
                     dx,dy=self.icon_collect
