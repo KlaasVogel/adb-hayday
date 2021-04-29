@@ -12,8 +12,8 @@ class Crops(list):
     corn=     {'growtime':  5, 'threshold':.90, 'field':1, 'set':1, 'icon':[238, -135]}
     carrot=   {'growtime': 10, 'threshold':.90, 'field':0, 'set':1, 'icon':[ 15, -125]}
     soy=      {'growtime': 20, 'threshold':.85, 'field':0, 'set':1, 'icon':[313, -410]}
-    sugarcane={'growtime': 30, 'threshold':.90, 'field':1, 'set':1, 'icon':[130, -310]}
-    indigo=   {'growtime':120, 'threshold':.90, 'field':0, 'set':2, 'icon':[366, -255]}
+    sugarcane={'growtime': 30, 'threshold':.85, 'field':1, 'set':1, 'icon':[130, -310]}
+    indigo=   {'growtime':120, 'threshold':.75, 'field':0, 'set':2, 'icon':[366, -255]}
     pumpkin=  {'growtime':180, 'threshold':.90, 'field':1, 'set':2, 'icon':[238, -135]}
 
     templates={}
@@ -24,31 +24,28 @@ class Crops(list):
         self.empty_templates.append(HD.loadTemplates('crops','empty_0*'))
         self.empty_templates.append(HD.loadTemplates('crops','empty_1*'))
         self.switch_template=HD.loadTemplates('crops','switch*')
-    def add(self, crop, amount=1, threshold=None, lok_x=0, lok_y=0):
-        pos_x, pos_y = HD.getPos(lok_x,lok_y)
+    def add(self, crop, amount=1, location=[0,0]):
+        position = HD.getPos(location)
         if hasattr(self,crop):
             if crop not in self.templates:
                 self.templates[crop]=HD.loadTemplates('crops',crop)
             data=getattr(self,crop)
-            self.append(Crop(self.device, crop, amount, self.tasklist,
-                             data['growtime'], data['threshold'], data['set'], data['icon'],
-                             self.templates[crop],self.empty_templates[data['field']],self.switch_template,
-                             pos_x, pos_y))
+            data['product']=crop
+            data['temp_full']=self.templates[crop]
+            data['temp_empty']=self.empty_templates[data['field']]
+            data['temp_switch']=self.switch_template
+            data['amount']=amount
+            data['position']=position
+            self.append(Crop(self.device, self.tasklist, data))
 
 class Crop(HD):
-    def __init__(self, device, product, amount, tasklist, growtime, threshold, set, icon, temp_full, temp_empty, temp_switch, pos_x=0, pos_y=0):
-        HD.__init__(self, device, product, tasklist, threshold, pos_x, pos_y)
-        self.growtime=growtime
-        self.scheduled=False
-        self.amount=amount
-        self.icon=icon
-        self.set=set
+    def __init__(self, device, tasklist, data):
+        HD.__init__(self, device, tasklist,data['product'])
+        for key,value in data.items():
+            setattr(self, key, value)
         self.switch=[-485,120]
         self.scythe=[-190,-80]
-        self.temp_full=temp_full
-        self.temp_empty=temp_empty
-        self.temp_switch=temp_switch
-        self.tasklist.addProduct(product, self.addJob, self.getJobTime)
+        self.tasklist.addProduct(self.product, self.addJob, self.getJobTime)
 
     def getJobTime(self):
         waittime=self.getWaitTime()
@@ -70,7 +67,7 @@ class Crop(HD):
                 self.scheduled=True
                 self.tasklist.addtask(wait/60+0.1, f'harvest {self.product}', self.image, self.harvest)
                 return
-            self.tasklist.reset(self.product)
+            # self.tasklist.reset(self.product)
 
     def calcLocation(self,location):
         x,y=location

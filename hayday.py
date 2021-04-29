@@ -1,5 +1,6 @@
 
 from hd import Board
+from trees import Trees
 from crops import Crops
 from stations import Stations
 from pens import Pens
@@ -14,6 +15,7 @@ class MainApp(Tk):
         self.root = Tk.__init__(self)
         self.tl=Tasklist()
         self.device=Adb_Device()
+        self.trees=Trees(self.device, self.tl)
         self.crops=Crops(self.device, self.tl)
         self.pens=Pens(self.device, self.tl)
         self.stations=Stations(self.device, self.tl)
@@ -23,25 +25,28 @@ class MainApp(Tk):
         self.device.output.show=self.output.show.get
         self.output.grid(row=1, column=1)
         self.buttons.grid(row=2,column=1)
-        self.crops.add('wheat', amount=3, lok_x=0, lok_y=-3)
-        self.crops.add('corn', amount=3, lok_x=-3, lok_y=-3)
-        self.crops.add('soy', amount=4, lok_x=-6, lok_y=-3)
-        self.crops.add('sugarcane', amount=4, lok_x=3, lok_y=-1)
-        self.crops.add('carrot', amount=3, lok_x=-9, lok_y=-3)
-        self.crops.add('indigo', amount=5, lok_x=-11, lok_y=7)
-        self.crops.add('pumpkin', amount=5, lok_x=-14, lok_y=8)
-        self.pens.add('chicken', amount=6, lok_x=-13, lok_y=2)
-        self.pens.add('chicken', amount=6, lok_x=5, lok_y=-6)
-        self.pens.add('cow', amount=5, lok_x=-8, lok_y=3)
-        self.pens.add('pig', amount=5, lok_x=-12, lok_y=-5)
-        self.stations.add('feed_mill', lok_x=-3, lok_y=4)
-        self.stations.add('feed_mill', lok_x=-13, lok_y=-13)
-        self.stations.add('dairy', lok_x=-7, lok_y=8)
-        self.stations.add('bakery', lok_x=3, lok_y=10)
-        self.stations.add('bbq_grill', lok_x=2, lok_y=10)
-        self.stations.add('sugar_mill', lok_x=-3, lok_y=14)
-        self.stations.add('popcorn_pot', lok_x=-3, lok_y=10)
-        self.stations.add('pie_oven', lok_x=8, lok_y=3)
+        self.trees.add('apples',    amount=2, location=[-13,-13])
+        self.crops.add('wheat',     amount=3, location=[  0, -3])
+        self.crops.add('corn',      amount=3, location=[ -3, -3])
+        self.crops.add('soy',       amount=4, location=[ -6, -3])
+        self.crops.add('sugarcane', amount=4, location=[  3, -1])
+        self.crops.add('carrot',    amount=3, location=[ -9, -3])
+        self.crops.add('indigo',    amount=5, location=[-11,  7])
+        self.crops.add('pumpkin',   amount=5, location=[-14,  8])
+        self.pens.add('chicken', amount=6, location=[-13,  2])
+        self.pens.add('chicken', amount=6, location=[  5, -6])
+        self.pens.add('cow',     amount=5, location=[ -8,  3])
+        self.pens.add('cow',     amount=5, location=[ -2,-13])
+        self.pens.add('pig',     amount=5, location=[-12, -5])
+        self.pens.add('sheep',   amount=4, location=[  8, 10])
+        self.stations.add('feed_mill',   location=[-3, 4])
+        self.stations.add('feed_mill',   location=[-13, -13])
+        self.stations.add('dairy',       location=[-7, 8])
+        self.stations.add('bakery',      location=[3, 10])
+        self.stations.add('bbq_grill',   location=[2, 10])
+        self.stations.add('sugar_mill',  location=[-3, 14])
+        self.stations.add('popcorn_pot', location=[-3, 10])
+        self.stations.add('pie_oven',    location=[8, 3])
 
     def start(self):
         self.tl.start()

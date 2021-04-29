@@ -12,7 +12,7 @@ class Stations(list):
         'chicken feed':{'amount':3, 'cooktime':5, 'icon': [-50,-300], 'ingredients': {'wheat': 2, 'corn':1}},
         'cow feed':{'amount':3, 'cooktime':10, 'icon': [-220,-230], 'ingredients': {'soy': 2, 'corn':1}},
         'pig feed':{'amount':3, 'cooktime':20, 'icon': [-350,-110], 'ingredients': {'carrot': 2, 'soy':1}},
-        'sheep feed':{'amount':3, 'cooktime':40, 'icon': [-390,50], 'ingredients': {}}   }}
+        'sheep feed':{'amount':3, 'cooktime':30, 'icon': [-390,50], 'ingredients': {'wheat': 2, 'soy':1}}   }}
     dairy={'threshold':.75,'recipes':{
         'cream':{'amount':1, 'cooktime':20, 'icon': [-15,-250], 'ingredients': {'milk': 1}},
         'butter':{'amount':1, 'cooktime':30, 'icon': [-185,-175], 'ingredients': {'milk': 2}},
@@ -23,7 +23,7 @@ class Stations(list):
         'white sugar':{'amount':1, 'cooktime':40, 'icon': [-265, -105], 'ingredients': {'sugarcane': 2}}   }}
     popcorn_pot={'threshold':.75,'recipes':{
         'popcorn':{'amount':1, 'cooktime':30, 'icon': [-135,-155], 'ingredients': {'corn': 2}},
-        'pop2':{'amount':1, 'cooktime':120, 'icon': [-270,-25], 'ingredients': {}}   }}
+        'buttered popcorn':{'amount':1, 'cooktime':60, 'icon': [-270,-25], 'ingredients': {'corn':2, 'butter':1}}   }}
     bbq_grill={'threshold':.75,'recipes':{
         'pancake':{'amount':1, 'cooktime':30, 'icon': [-127,-230], 'ingredients': {'egg': 3, 'brown sugar':1}},
         'bacon and eggs':{'amount':1, 'cooktime':60, 'icon': [-285,-120], 'ingredients': {'egg': 4,'bacon':2}},
@@ -42,23 +42,25 @@ class Stations(list):
         self.device=device
         self.tasklist=tasklist
         self.templates={}
-    def add(self, station, threshold=None, lok_x=0, lok_y=0):
-        pos_x, pos_y = HD.getPos(lok_x,lok_y)
+    def add(self, station, location):
+        position = HD.getPos(location)
         if hasattr(self,station):
             if station not in self.templates:
                 self.templates[station]=HD.loadTemplates('stations',station)
             data=getattr(self,station)
-            self.append(Station(self.device, self.tasklist, station, data['recipes'], data['threshold'], self.templates[station], pos_x, pos_y ))
-
+            data['product']=station
+            data['templates']=self.templates[station]
+            data['position']=position
+            self.append(Station(self.device, self.tasklist, data ))
 
 class Station(HD):
-    def __init__(self, device, tasklist, station, recipes, threshold, templates, pos_x, pos_y):
-        HD.__init__(self, device, station, tasklist, threshold, pos_x, pos_y)
+    def __init__(self, device, tasklist, data):
+        HD.__init__(self, device, tasklist, data['product'])
+        for key,value in data.items():
+            setattr(self, key, value)
         self.recipes={}
-        self.templates=templates
         self.jobs=[]
-        self.scheduled=False
-        for product,recipe in recipes.items():
+        for product,recipe in data['recipes'].items():
             self.recipes[product]=Recipe(self,product,recipe)
 
     def getJobTime(self):
@@ -67,6 +69,14 @@ class Station(HD):
             waittime+=self.recipes[product].cooktime
         return waittime
 
+    def orderJobs(self):
+        print("ordering")
+        result={}
+        for product in self.jobs:
+            result[product]=self.recipes[product].cooktime
+        self.jobs=sorted(result, key=result.get)
+        print(self.jobs)
+
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
         wait=self.getWaitTime()
@@ -74,7 +84,6 @@ class Station(HD):
             print('adding task')
             product=self.jobs.pop(0)
             print(f"new job: {product} - jobs: {self.jobs}")
-            sleep(2)
             self.tasklist.addtask(wait/60+0.3, product, self.image, self.recipes[product].create)
             self.scheduled=True
 
@@ -91,6 +100,7 @@ class Station(HD):
                 if not self.check_cross():
                     self.tasklist.removeWish(product,amount)
                     self.tasklist.removeSchedule(product,amount)
+                    self.orderJobs()
                 else:
                     self.tasklist.addtask(5, product, self.image, self.recipes[product].start_collect)
             self.checkJobs()
@@ -122,7 +132,7 @@ class Station(HD):
                         print('not enough ingredients')
                         recipe.checkIngredients()
                         self.setWaittime(2)
-                        recipe.addJob()
+                        recipe.addJob(error=True)
                         self.move_from()
                         return
                     self.setWaittime(cooktime)
@@ -146,9 +156,11 @@ class Recipe():
             setattr(self, key, value)
             station.tasklist.addProduct(product, self.addJob, station.getJobTime)
 
-    def addJob(self):
+    def addJob(self,error=False):
         self.station.jobs.append(self.product)
-        self.checkIngredients()
+        # self.checkIngredients()
+        if not error:
+            self.station.orderJobs()
         self.station.checkJobs()
         return self.amount
 

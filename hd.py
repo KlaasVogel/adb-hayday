@@ -14,15 +14,12 @@ class HD():
     arrows=[Template(path.join('images','arrows.png'))]
     cont=[Template(path.join('images','lvl_up_C_.png'))]
 
-    def __init__(self,device,product,tasklist,threshold,pos_x,pos_y):
+    def __init__(self, device, tasklist, item):
         self.device=device
-        self.product=product
         self.tasklist=tasklist
-        self.threshold=threshold
-        file=path.join('images','products',f'{product}.png')
+        self.scheduled=False
+        file=path.join('images','products',f'{item}.png')
         self.image=file if path.isfile(file) else path.join('images','no_image.png')
-        self.pos_x=pos_x
-        self.pos_y=pos_y
         self.jobs=0
         self.waiting=0
 
@@ -35,7 +32,8 @@ class HD():
         return list
 
     @staticmethod
-    def getPos(x,y):
+    def getPos(location):
+        x,y=location
         pos_x=40*x-40*y
         pos_y=-20*x-20*y
         return [pos_x, pos_y]
@@ -51,10 +49,12 @@ class HD():
         self.waiting=int(time()+wait*60)
 
     def move_to(self):
-        self.device.move(self.pos_x, self.pos_y)
+        pos_x,pos_y=self.position
+        self.device.move(pos_x, pos_y)
         sleep(.2)
     def move_from(self):
-        self.device.move(-self.pos_x, -self.pos_y)
+        pos_x,pos_y=self.position
+        self.device.move(-pos_x, -pos_y)
     def check_cross(self):
         locations=self.device.locate_item(self.cross,.45)
         if len(locations):
@@ -150,7 +150,6 @@ class HD():
         x,y=locations[0]
         self.device.tap(x,y)
         waypoints=[[x+item_x,y+item_y]]+locations
-        print(waypoints)
         self.device.trace(waypoints)
         sleep(.5)
 
