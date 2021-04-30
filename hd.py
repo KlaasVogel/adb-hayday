@@ -233,6 +233,6 @@ class Board(HD):
                         for product in products:
                             print(f'found: {product}')
                             card.add(product)
-                        nextcheck=3
+                        nextcheck=5
                 self.check_cross()
         self.tasklist.addtask(nextcheck,'board',self.image,self.check)

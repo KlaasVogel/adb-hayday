@@ -20,25 +20,29 @@ class Stations(list):
         'cheese':{'amount':1, 'cooktime':60, 'icon': [-330,-75], 'ingredients': {'milk': 3}},
         'cheese2':{'amount':1, 'cooktime':120, 'icon': [-365,75], 'ingredients': {}}   }}
     sugar_mill={'threshold':.75,'recipes':{
-        'brown sugar':{'amount':1, 'cooktime':20, 'icon': [-95,-220], 'ingredients': {'sugarcane': 1}},
-        'white sugar':{'amount':1, 'cooktime':40, 'icon': [-265, -105], 'ingredients': {'sugarcane': 2}}   }}
+        'brown sugar':{'amount':1, 'cooktime':20, 'icon': [452-565, 226-464], 'ingredients': {'sugarcane': 1}},
+        'white sugar':{'amount':1, 'cooktime':40, 'icon': [295-565, 335-464], 'ingredients': {'sugarcane': 2}},
+        'syrup':      {'amount':1, 'cooktime':90, 'icon': [214-565, 502-464], 'ingredients': {'sugarcane': 4}}   }}
     popcorn_pot={'threshold':.75,'recipes':{
-        'popcorn':{'amount':1, 'cooktime':30, 'icon': [-115,-235], 'ingredients': {'corn': 2}},
-        'buttered popcorn':{'amount':1, 'cooktime':60, 'icon': [-265,-130], 'ingredients': {'corn':2, 'butter':1}}   }}
+        'popcorn':{'amount':1, 'cooktime':30, 'icon':          [-115,-235], 'ingredients': {'corn': 2}},
+        'buttered popcorn':{'amount':1, 'cooktime':60, 'icon': [-265,-130], 'ingredients': {'corn':2, 'butter':1}},
+        'spicy popcorn':{'amount':1, 'cooktime':60, 'icon':    [-341,   7], 'ingredients': {'corn':2, 'butter':1}}  }}
     bbq_grill={'threshold':.75,'recipes':{
-        'pancake':{'amount':1, 'cooktime':30, 'icon': [-127,-230], 'ingredients': {'egg': 3, 'brown sugar':1}},
-        'bacon and eggs':{'amount':1, 'cooktime':60, 'icon': [-285,-120], 'ingredients': {'egg': 4,'bacon':2}},
-        'burger':{'amount':1, 'cooktime':120, 'icon': [-345, 25], 'ingredients': {}}   }}
+        'pancake':{'amount':1, 'cooktime':30, 'icon':        [870-931, 130-413], 'ingredients': {'egg': 3, 'brown sugar':1}},
+        'bacon and eggs':{'amount':1, 'cooktime':60, 'icon': [701-931, 201-413], 'ingredients': {'egg': 4,'bacon':2}},
+        'hamburger':{'amount':1, 'cooktime':120, 'icon':     [569-931, 350-413], 'ingredients': {'bread':2,'bacon':2}},
+        'burger2':{'amount':1, 'cooktime':180, 'icon':       [530-931, 488-413], 'ingredients': {}}  }}
     bakery={'threshold':.75,'recipes':{
         'bread':{'amount':1, 'cooktime':5, 'icon': [-60,-298], 'ingredients': {'wheat': 3}},
         'corn bread':{'amount':1, 'cooktime':30, 'icon': [-233,-228], 'ingredients': {'corn': 2, 'egg':2}},
         'cookie':{'amount':1, 'cooktime':60, 'icon': [-363,-106], 'ingredients': {'wheat': 2, 'egg':2, 'brown sugar':1}},
         'cupcake':{'amount':1, 'cooktime':120, 'icon': [-405, 48], 'ingredients': {}}   }}
     pie_oven={'threshold':.75,'recipes':{
-        'carrot pie':{'amount':1, 'cooktime':60, 'icon': [-128,-248], 'ingredients': {'carrot': 3, 'egg':1, 'wheat':2}},
-        'pumpkin pie':{'amount':1, 'cooktime':120, 'icon': [-286,-141], 'ingredients': {'pumpkin': 3, 'egg':1, 'wheat':2}},
-        'apple pie':{'amount':1, 'cooktime':0, 'icon': [-3353,6], 'ingredients': {}} }}
-
+        'carrot pie':{'amount':1, 'cooktime':60, 'icon':   [801-927, 258-416], 'ingredients': {'carrot': 3, 'egg':1, 'wheat':2}},
+        'pumpkin pie':{'amount':1, 'cooktime':120, 'icon': [667-927, 376-416], 'ingredients': {'pumpkin': 3, 'egg':1, 'wheat':2}},
+        'bacon pie':{'amount':1, 'cooktime':180, 'icon':   [758-927, 103-416], 'ingredients': {'bacon': 3, 'egg':1, 'wheat':2}},
+        'apple pie':{'amount':1, 'cooktime':120, 'icon':   [567-927, 207-416], 'ingredients': {}},
+        'paella':{'amount':1, 'cooktime':120, 'icon':      [457-927, 383-416], 'ingredients': {}} }}
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist

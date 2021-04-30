@@ -18,7 +18,7 @@ class Shop(HD):
                     self.tasklist.addtask(0.5, f'Start selling of {product.name}', self.image, product.sell)
             else:
                 self.tasklist.addWish(product.name, product.min_amount-available)
-        # self.tasklist.addtask(10, f"checking for items to sell", self.image, self.checkItems)
+        self.tasklist.addtask(10, f"checking for items to sell", self.image, self.checkItems)
 
 class ShopItem():
     def __init__(self, name, min_amount):

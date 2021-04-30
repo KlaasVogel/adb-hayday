@@ -47,7 +47,7 @@ class MainApp(Tk):
         self.stations.add('feed_mill',   location=[-13, -13])
         self.stations.add('dairy',       location=[-7, 8])
         self.stations.add('bakery',      location=[3, 10])
-        self.stations.add('bbq_grill',   location=[2, 10])
+        self.stations.add('bbq_grill',   location=[10, -2])
         self.stations.add('sugar_mill',  location=[-3, 14])
         self.stations.add('popcorn_pot', location=[-3, 10])
         self.stations.add('pie_oven',    location=[8, 3])
