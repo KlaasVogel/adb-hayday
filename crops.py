@@ -59,13 +59,14 @@ class Crop(HD):
 
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
-        wait = self.getWaitTime()
+        wait = self.getWaitTime()+ 0.1
         if not self.scheduled:
             if self.jobs > 0 :
                 print('adding task')
                 self.jobs+=-1
                 self.scheduled=True
-                self.tasklist.addtask(wait/60+0.1, f'harvest {self.product}', self.image, self.harvest)
+                self.setWaittime(wait)
+                self.tasklist.addtask(wait, f'harvest {self.product}', self.image, self.harvest)
                 return
             # self.tasklist.reset(self.product)
 
@@ -91,7 +92,7 @@ class Crop(HD):
                 set_location=[x+90,y]
                 (r,g,b)=self.device.getColor(set_location)
                 print(f"colors ({x+90},{y}): {r},{g},{b}")
-                set=1 if (r>200 and g>200 and b>150) else 2
+                set=1 if (r>100 and g>100 and b>100) else 2
                 print(f"set: {set}    needs to be: {self.set}")
                 if set != self.set:
                     self.device.tap(x,y)
@@ -121,11 +122,12 @@ class Crop(HD):
                 self.tap_and_trace(fields,dx,dy)
                 if not self.check_cross():
                     self.tasklist.removeWish(self.product,self.amount)
-                self.tasklist.removeSchedule(self.product,self.amount)
+            self.tasklist.removeSchedule(self.product,self.amount)
             sleep(2)
             self.sow(fields)
             self.scheduled=False
             self.checkJobs()
             self.move_from()
         else:
+            print('something went wrong')
             self.tasklist.addtask(1,f'harvest {self.product}',self.image,self.harvest)

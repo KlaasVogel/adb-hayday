@@ -38,11 +38,12 @@ class HD():
         pos_y=-20*x-20*y
         return [pos_x, pos_y]
 
+    #return time in minutes
     def getWaitTime(self):
         if self.waiting:
             waittime=self.waiting-int(time())
             if waittime > 0:
-                return waittime
+                return waittime/60
         return 0
 
     def setWaittime(self, wait):
@@ -113,7 +114,7 @@ class HD():
             return True
         return False
     def check_home(self):
-        locations=self.device.locate_item(self.home,.75)
+        locations=self.device.locate_item(self.home,.85)
         if not len(locations):
             print('ohoh')
             return False
@@ -153,28 +154,26 @@ class HD():
         self.device.trace(waypoints,size=50)
         sleep(.5)
 
+    def trace(self, locations, item_x=0, item_y=0):
+        print('trace')
+        x,y=locations[0]
+        waypoints=[[x+item_x,y+item_y]]+locations
+        self.device.trace(waypoints,size=150)
+        sleep(.2)
+
 class Card():
     def __init__(self,tasklist, location):
         self.tasklist=tasklist
         self.location = location
-        self.requests = {}
+        self.requests = []
     def add(self,product):
         if product not in self.requests:
-            self.requests[product] = {"scheduled":1}
-            self.tasklist.updateWish(product)
-        if self.tasklist.getWish(product) <= 0:
-            self.requests[product]["scheduled"]+=1
-            self.tasklist.updateWish(product)
-        status=self.requests[product]["scheduled"]-self.tasklist.getWish(product)
-        print(f"status wish {product}: {status}")
+            self.requests.append(product)
+        self.tasklist.addWish(product)
     def reset(self):
-        self.requests = {}
+        self.requests = []
     def __repr__(self):
-        products=[]
-        for product,data in self.requests.items():
-            text=f"{product} - {data['scheduled']}"
-            products.append(text)
-        return "Cards:"+", ".join(products)
+        return "Cards:"+", ".join(self.requests)
 
 class Board(HD):
     def __init__(self, device, tasklist):
@@ -234,6 +233,6 @@ class Board(HD):
                         for product in products:
                             print(f'found: {product}')
                             card.add(product)
-                        nextcheck=5
+                        nextcheck=3
                 self.check_cross()
         self.tasklist.addtask(nextcheck,'board',self.image,self.check)

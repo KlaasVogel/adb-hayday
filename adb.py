@@ -51,6 +51,7 @@ class Adb_Device():
     res_x, res_y= [1600,900]
     max=32767
     output=ShowOutput()
+    lastscreen=None
     def __init__(self):
         client=Client(host='127.0.0.1', port=5037)
         print(client.version())
@@ -204,13 +205,23 @@ class Adb_Device():
         screenshot_file=path.join('images','screen.png')
         return cv2.imread(screenshot_file)
 
+    @staticmethod
+    def show_img(img):
+        cv2.imshow('Test', img)
+        cv2.waitKey(0) # waits until a key is pressed
+        cv2.destroyAllWindows() # destroys the window showing image
+
     def load_screenCap(self):
         screencap = self.device.screencap()
-        screenshot_file=path.join('images','screen.png')
-        with open(screenshot_file, 'wb') as f:
-            f.write(screencap)
-        sleep(.1)
-        return cv2.imread(screenshot_file)
+        img_bytes=bytes(screencap)
+        self.lastscreen=cv2.imdecode(np.fromstring(img_bytes, np.uint8), cv2.IMREAD_COLOR)
+        # self.show_img(img)
+        return self.lastscreen
+        # screenshot_file=path.join('images','screen.png')
+        # with open(screenshot_file, 'wb') as f:
+        #     f.write(screencap)
+        # sleep(.1)
+        # return cv2.imread(screenshot_file)
 
     def get_match(self, template, img, threshold, margin):
         loc=[]
@@ -235,13 +246,13 @@ class Adb_Device():
 
     def getColor(self,location):
         x,y=location
-        img=self.load_screen_img()
+        img=self.lastscreen
         (b,g,r) = img[y,x]
         return [r,g,b]
 
-    def locate_item(self,templates,threshold=0.75,margin=0.05,one=False,offset=[30,16]):
+    def locate_item(self,templates,threshold=0.75,margin=0.05,one=False,offset=[30,16],last=False):
         result_file=path.join('images','result.png')
-        img_base=self.load_screenCap()
+        img_base=self.lastscreen if last else self.load_screenCap()
         img_result=img_base
         loclist=[]
         for template in templates:

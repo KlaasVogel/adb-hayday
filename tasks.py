@@ -9,12 +9,17 @@ def cls():
 class Wishlist(dict):
     def add(self, product, amount=1):
         if not product in self:
-            self[product]={"amount":amount, "scheduled":0}
-        else:
-            self[product]["amount"]+=amount
+            self[product]={"amount":0, "scheduled":0}
+        wishes, scheduled=self[product].values()
+        if wishes<0:
+            self[product]["amount"]=0
+        if (amount-scheduled)>0:
+            self[product]["amount"]+=(amount-scheduled)
     def getWish(self,product):
         if product in self:
-            return self[product].get("amount",0)
+            amount=self[product].get("amount",0)
+            scheduled=self[product].get("amount",0)
+            return scheduled-amount
         return 0
     def checkWish(self,product,amount):
         if product in self:
@@ -31,7 +36,7 @@ class Tasklist(dict):
         self.paused=False
         self.products={}
         self.wishlist=Wishlist()
-        self.updateWish=self.wishlist.add
+        self.addWish=self.wishlist.add
         self.getWish=self.wishlist.getWish
         self.checkWish=self.wishlist.checkWish
     def addtask(self,waittime,name,image,job):
@@ -55,7 +60,6 @@ class Tasklist(dict):
         return 0
     def reset(self,product):
         print(f"resetting {product}:")
-        sleep(5)
         self.wishlist.pop(product)
     def checkWishes(self):
         joblist=[]
@@ -70,8 +74,8 @@ class Tasklist(dict):
     def removeSchedule(self, product, amount):
         if product in self.wishlist:
             self.wishlist[product]['scheduled']-=amount
-        if self.wishlist[product]['scheduled']<0:
-            self.wishlist[product]['scheduled']=0
+            if self.wishlist[product]['scheduled']<0:
+                self.wishlist[product]['scheduled']=0
     def printlist(self):
         cur_time=int(time())
         if not len(self):

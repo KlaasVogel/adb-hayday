@@ -4,6 +4,7 @@ from trees import Trees
 from crops import Crops
 from stations import Stations
 from pens import Pens
+from shop import Shop
 from tasks import Tasklist
 from adb import Adb_Device, ShowOutput
 from tkinter import Tk, Frame
@@ -15,6 +16,7 @@ class MainApp(Tk):
         self.root = Tk.__init__(self)
         self.tl=Tasklist()
         self.device=Adb_Device()
+        self.shop=Shop(self.device, self.tl)
         self.trees=Trees(self.device, self.tl)
         self.crops=Crops(self.device, self.tl)
         self.pens=Pens(self.device, self.tl)
@@ -25,20 +27,22 @@ class MainApp(Tk):
         self.device.output.show=self.output.show.get
         self.output.grid(row=1, column=1)
         self.buttons.grid(row=2,column=1)
+        self.shop.add('egg', min_amount=14)
+        self.shop.add('milk', min_amount=12)
         self.trees.add('apples',    amount=2, location=[-13,-13])
-        self.crops.add('wheat',     amount=3, location=[  0, -3])
-        self.crops.add('corn',      amount=3, location=[ -3, -3])
+        self.crops.add('wheat',     amount=4, location=[  0, -3])
+        self.crops.add('corn',      amount=4, location=[ -3, -3])
         self.crops.add('soy',       amount=4, location=[ -6, -3])
         self.crops.add('sugarcane', amount=4, location=[  3, -1])
-        self.crops.add('carrot',    amount=3, location=[ -9, -3])
-        self.crops.add('indigo',    amount=5, location=[-11,  7])
-        self.crops.add('pumpkin',   amount=5, location=[-14,  8])
+        self.crops.add('carrot',    amount=4, location=[ -9, -3])
+        self.crops.add('indigo',    amount=4, location=[-11,  7])
+        self.crops.add('pumpkin',   amount=6, location=[-14,  8])
         self.pens.add('chicken', amount=6, location=[-13,  2])
         self.pens.add('chicken', amount=6, location=[  5, -6])
         self.pens.add('cow',     amount=5, location=[ -8,  3])
         self.pens.add('cow',     amount=5, location=[ -2,-13])
         self.pens.add('pig',     amount=5, location=[-12, -5])
-        self.pens.add('sheep',   amount=4, location=[  8, 10])
+        self.pens.add('sheep',   amount=5, location=[  4, 4])
         self.stations.add('feed_mill',   location=[-3, 4])
         self.stations.add('feed_mill',   location=[-13, -13])
         self.stations.add('dairy',       location=[-7, 8])

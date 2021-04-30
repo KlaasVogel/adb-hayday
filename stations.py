@@ -9,10 +9,11 @@ class Stations(list):
     device=None
     tasklist=None
     feed_mill={'threshold':.75,'recipes':{
-        'chicken feed':{'amount':3, 'cooktime':5, 'icon': [-50,-300], 'ingredients': {'wheat': 2, 'corn':1}},
-        'cow feed':{'amount':3, 'cooktime':10, 'icon': [-220,-230], 'ingredients': {'soy': 2, 'corn':1}},
-        'pig feed':{'amount':3, 'cooktime':20, 'icon': [-350,-110], 'ingredients': {'carrot': 2, 'soy':1}},
-        'sheep feed':{'amount':3, 'cooktime':30, 'icon': [-390,50], 'ingredients': {'wheat': 2, 'soy':1}}   }}
+        'chicken feed':{'amount':3, 'cooktime':5, 'icon': [-104,-166], 'ingredients': {'wheat': 2, 'corn':1}},
+        'cow feed':{'amount':3, 'cooktime':10, 'icon': [-245,-40], 'ingredients': {'soy': 2, 'corn':1}},
+        'pig feed':{'amount':3, 'cooktime':20, 'icon': [-152,-311], 'ingredients': {'carrot': 2, 'soy':1}},
+        'sheep feed':{'amount':3, 'cooktime':30, 'icon': [-320,-207], 'ingredients': {'wheat': 2, 'soy':1}},
+        'goat feed':{'amount':3, 'cooktime':60, 'icon': [-435,-33], 'ingredients': {}}   }}
     dairy={'threshold':.75,'recipes':{
         'cream':{'amount':1, 'cooktime':20, 'icon': [-25,-270], 'ingredients': {'milk': 1}},
         'butter':{'amount':1, 'cooktime':30, 'icon': [-185,-195], 'ingredients': {'milk': 2}},
@@ -30,7 +31,7 @@ class Stations(list):
         'burger':{'amount':1, 'cooktime':120, 'icon': [-345, 25], 'ingredients': {}}   }}
     bakery={'threshold':.75,'recipes':{
         'bread':{'amount':1, 'cooktime':5, 'icon': [-60,-298], 'ingredients': {'wheat': 3}},
-        'cake':{'amount':1, 'cooktime':30, 'icon': [-233,-228], 'ingredients': {'corn': 2, 'egg':2}},
+        'corn bread':{'amount':1, 'cooktime':30, 'icon': [-233,-228], 'ingredients': {'corn': 2, 'egg':2}},
         'cookie':{'amount':1, 'cooktime':60, 'icon': [-363,-106], 'ingredients': {'wheat': 2, 'egg':2, 'brown sugar':1}},
         'cupcake':{'amount':1, 'cooktime':120, 'icon': [-405, 48], 'ingredients': {}}   }}
     pie_oven={'threshold':.75,'recipes':{
@@ -79,12 +80,13 @@ class Station(HD):
 
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
-        wait=self.getWaitTime()
+        wait=self.getWaitTime()+0.25
         if len(self.jobs) and not self.scheduled:
             print('adding task')
             product=self.jobs.pop(0)
             print(f"new job: {product} - jobs: {self.jobs}")
-            self.tasklist.addtask(wait/60+0.3, product, self.image, self.recipes[product].create)
+            self.setWaittime(wait)
+            self.tasklist.addtask(wait, product, self.image, self.recipes[product].create)
             self.scheduled=True
 
     def collect(self,product,amount=1):
@@ -133,19 +135,21 @@ class Station(HD):
                         recipe.checkIngredients()
                         self.setWaittime(2)
                         recipe.addJob(error=True)
-                        self.move_from()
+                        self.exit(x,y)
                         return
                     self.setWaittime(cooktime)
                     self.tasklist.addtask(cooktime+0.5, f'collect {product}', self.image, recipe.start_collect)
-                    self.click_green()
-                    self.move_from()
+                    self.exit(x,y)
                     return
-            self.click_green()
-            self.move_from()
+
         #something went wrong, try again in one minute
         print('something went wrong')
-        sleep(2)
+        sleep(0.5)
         self.tasklist.addtask(1, f'{self.product}: create {product}', self.image, recipe.create)
+
+    def exit(self,x,y):
+        self.device.tap(x-80,y-40)
+        self.move_from()
 
 
 class Recipe():

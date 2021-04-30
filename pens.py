@@ -9,33 +9,46 @@ import numpy as np
 class Pens(list):
     device=None
     tasklist=None
-    chicken={'eattime':20, 'product':'egg', 'food':'chicken feed','threshold':.75,'icon_feed':[-120,-240],'icon_collect':[-270,-115],'size':0,'centre':[-2,45]}
-    cow={'eattime':60, 'product':'milk', 'food':'cow feed','threshold':.75,'icon_feed':[-100,-240],'icon_collect':[-250,-115],'size':1,'centre':[38,50]}
-    pig={'eattime':240, 'product':'bacon', 'food':'pig feed','threshold':.75,'icon_feed':[-115,-285],'icon_collect':[-265,-185],'size':1,'centre':[-80,25]}
-    sheep={'eattime':360, 'product':'wool', 'food':'sheep feed','threshold':.75,'icon_feed':[-115,-285],'icon_collect':[-265,-185],'size':1,'centre':[-30,75]}
-    trace_path=[[[0,0],[37,19],[74,0],[37,-19],[0,-38],[-37,-19],[-74,0],[-37,19],[0,38],[0,8],[15,0],[0,-8],[-15,0]],
-                [[ 37, 57],[ 74, 38],[ 111, 19],[ 148,0],[ 111,-19],[ 74,-38],[ 37,-57],[0,-76],
-                 [-37,-57],[-74,-38],[-111,-19],[-148,0],[-111, 19],[-74, 38],[-37, 57],[0, 76]  ]]
+    chicken={'eattime':20, 'product':'egg', 'food':'chicken feed','threshold':.75,'threshold_collect':0.95,'icon_feed':[-120,-240],'icon_collect':[-270,-115],'size':0,'center_offset':[-2,36]}
+    cow={'eattime':60, 'product':'milk', 'food':'cow feed','threshold':.75,'threshold_collect':0.95,'icon_feed':[-100,-240],'icon_collect':[-250,-115],'size':1,'center_offset':[8,35]}
+    pig={'eattime':240, 'product':'bacon', 'food':'pig feed','threshold':.75,'threshold_collect':0.98,'icon_feed':[-115,-285],'icon_collect':[-265,-185],'size':1,'center_offset':[-80,25]}
+    sheep={'eattime':360, 'product':'wool', 'food':'sheep feed','threshold':.75,'threshold_collect':0.9,'icon_feed':[-115,-285],'icon_collect':[-265,-185],'size':1,'center_offset':[-30,75]}
+    trace_paths={'chicken':[[0,0],[0,-8],[-15,0],[8,14],[15,0],[47,27],[80,7],[66,7],[35,-12],[-42,-17],[-89,7],[-104,7],[-37,19],[-55,33],[0,38],[0,55]],
+                 'pig':[[0,0],[0,-8],[-15,0],[0,8],[15,0],
+                        [ 30, 15],[ 60,  0],[ 30,-15],[0,-30],
+                        [-30,-15],[-60,  0],[-30, 15],[0, 30],
+                        [ 30, 45],[ 60, 30],[ 90, 15],[ 120,  0],[ 90,-15],[ 60,-30],[ 30,-45],[0,-60],
+                        [-30,-45],[-60,-30],[-90,-15],[-120,  0],[-90, 15],[-69, 30],[-30, 45],[0, 60]],
+           'cow':[[0,0],[ 30, 15],[ 60,  0],[ 30,-15],[0,-30],
+                        [-30,-15],[-60,  0],[-30, 15],[0, 30],
+                        [ 30, 45],[ 60, 30],[ 90, 15],[ 120,  0],[ 90,-15],[ 60,-30],[ 30,-45],[0,-60],
+                        [-30,-45],[-60,-30],[-90,-15],[-120,  0],[-90, 15],[-60, 30],[-30, 45],[0, 60],
+                        [ 30, 75],[ 60, 60],[ 90, 45],[ 120, 30],[150, 15]],
+               'sheep':[[0,0],[0,-8],[-15,0],[0,8],[15,0],
+                       [ 30, 15],[ 60,  0],[ 30,-15],[0,-30],
+                       [-30,-15],[-60,  0],[-30, 15],[0, 30],
+                       [ 30, 45],[ 60, 30],[ 90, 15],[ 120,  0],[ 90,-15],[ 60,-30],[ 30,-45],[0,-60],
+                       [-30,-45],[-60,-30],[-90,-15],[-120,  0],[-90, 15],[-69, 30],[-30, 45],[0, 60]] }
 
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist
         self.pen_templates={}
-        self.full_templates={}
-        self.empty_templates={}
+        self.collect_templates={}
+        self.food_templates={}
     def add(self, animal, amount=1, location=[0,0]):
         position = HD.getPos(location)
         if hasattr(self,animal):
             if animal not in self.pen_templates:
                 self.pen_templates[animal]=HD.loadTemplates('pens',animal)
-                self.full_templates[animal]=HD.loadTemplates(path.join('animals',animal),f'{animal}_full')
-                self.empty_templates[animal]=HD.loadTemplates(path.join('animals',animal),f'{animal}_empty')
+                self.collect_templates[animal]=HD.loadTemplates(path.join('pens','collect'),f'{animal}')
+                self.food_templates[animal]=HD.loadTemplates(path.join('pens','food'),f'{animal}')
             data=getattr(self,animal)
             data['animal']=animal
-            data['trace_path']=self.trace_path[0]+self.trace_path[1] if data['size'] else self.trace_path[0]
+            data['trace_path']=np.array(self.trace_paths.get(animal,[[0,0]]))
             data['temp_pen']=self.pen_templates[animal]
-            data['temp_full']=self.full_templates[animal]
-            data['temp_empty']=self.empty_templates[animal]
+            data['temp_collect']=self.collect_templates[animal]
+            data['temp_food']=self.food_templates[animal]
             data['position']=position
             data['amount']=amount
             self.append(Pen(self.device, self.tasklist, data))
@@ -45,6 +58,7 @@ class Pen(HD):
         HD.__init__(self, device, tasklist, data['product'])
         for key,value in data.items():
             setattr(self, key, value)
+        self.center=[0,0]
         self.tasklist.addProduct(self.product, self.addJob, self.getJobTime)
         # self.tasklist.addtask(0.05, self.animal, self.image, self.collect)
 
@@ -59,15 +73,31 @@ class Pen(HD):
         self.checkJobs()
         return self.amount
 
+    def checkCollected(self):
+        print(f"checking if all {self.product} is collected")
+        result=self.device.locate_item(self.temp_collect, self.threshold_collect)
+        if len(result):
+            print('found')
+            return False
+        return True
+
+    def checkFed(self):
+        print(f"checking if all {self.animal} are fed")
+        result=self.device.locate_item(self.temp_food, 0.9)
+        if len(result):
+            print('found')
+            return False
+        return True
+
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
-        wait=self.getWaitTime()
+        wait=self.getWaitTime()+0.2
         if not self.scheduled:
             if self.jobs>0 :
                 print('adding task')
                 self.jobs+=-1
-                self.tasklist.checkWish(self.food, 3)
-                self.tasklist.addtask(wait/60+0.2, f"collect: {self.product}", self.image, self.collect)
+                self.setWaittime(wait)
+                self.tasklist.addtask(wait, f"collect: {self.product}", self.image, self.collect)
                 self.scheduled=True
                 return
             # self.tasklist.reset(self.product)
@@ -75,66 +105,103 @@ class Pen(HD):
     def checkFood(self):
         self.tasklist.checkWish(self.food, self.amount)
 
-    def feed(self,waypoints):
-        print('feeding')
-        dx,dy=self.icon_feed
-        # x,y=animals_full[0]
-        #
-        # animals= self.device.locate_item(self.temp_empty,.45, offset=[3,3])
-        # waypoints = animals_full + self.device.getClose(animals, x, y, *self.margin)
-        self.tap_and_trace(waypoints, dx, dy)
-        sleep(.3)
-        if self.check_cross():
-            self.setWaittime(4)
-            self.checkFood()
-            self.tasklist.addtask(4, self.animal, self.image, self.collect)
-            return False
-        self.setWaittime(self.eattime)
-        return True
+    def exit(self):
+        x,y=self.center
+        self.device.tap(x-150,y-80)
+        self.move_from()
 
-    def collect(self):
+    def locate_pen(self):
+        print("move to Pen")
         if self.reset_screen():
             self.move_to()
-            print(f'collecting: {self.product}')
             location=self.device.locate_item(self.temp_pen, self.threshold, one=True)
             if len(location):
-                self.scheduled=False
-                centre=np.add(location,self.centre)
-                dx,dy=self.icon_collect
-                points=np.array(self.trace_path)
-                waypoints = np.empty_like(points)
-                for i in range(len(self.trace_path)):
-                  waypoints[i, :] = points[i, :] + centre
-                self.tap_and_trace(waypoints.tolist(), dx, dy)
-                if not self.check_cross():
-                    self.tasklist.removeWish(self.product,self.amount)
-                if self.feed(waypoints.tolist()):
-                    self.checkJobs()
-                self.move_from()
+                self.center=np.add(location,self.center_offset)
+                self.device.tap(*self.center)
+                return True
+        return False
+
+    def createWaypoints(self):
+        waypoints = np.empty_like(self.trace_path)
+        # print(self.center)
+        for i in range(self.trace_path.shape[0]):
+          waypoints[i, :] = self.trace_path[i, :] + self.center
+        return waypoints.tolist()
+
+    def feed(self,atsite=False,waypoints=[]):
+        print('feeding')
+        print(atsite)
+        if atsite or self.locate_pen():
+            if not len(waypoints):
+                waypoints=self.createWaypoints()
+            dx,dy=self.icon_feed
+            # print(waypoints)
+            self.trace(waypoints, dx, dy)
+            sleep(.3)
+            if self.check_cross():
+                print("Missing Food. retry in 5 minutes")
+                self.setWaittime(5)
+                self.checkFood()
+                self.tasklist.addtask(5.2, f'Try Feeding {self.animal}', self.image, self.feed)
+                self.exit()
+                return False
+            if not self.checkFed():
+                print("Not all animals are fed. Retry in 1 minute")
+                self.setWaittime(1)
+                self.tasklist.addtask(1.5, f"Feed: {self.animal}", self.image, self.feed)
+                self.exit()
+                return False
+            self.checkFood()
+            self.setWaittime(self.eattime)
+            self.checkJobs()
+            self.exit()
+            return True
+        print('something went wrong')
+        self.tasklist.addtask(1, self.animal, self.image, self.feed)
+        return False
+
+    def collect(self):
+        print(f'collecting: {self.product}')
+        if self.locate_pen():
+            self.tasklist.removeSchedule(self.product,self.amount)
+            if self.checkCollected():
+                self.setWaittime(5)
+                self.tasklist
+                if not self.checkFed():
+                    print("Not all animals are fed. Feeding and Resetting")
+                    self.setWaittime(2)
+                    self.feed(True)
+                    return
+                print("cannot collect, retry in 5 minutes")
+                self.tasklist.addtask(5, f"Try to collect {self.product}", self.image, self.collect)
+                self.exit()
                 return
-            self.move_from()
-        #something went wrong
+            self.scheduled=False
+            dx,dy=self.icon_collect
+            waypoints=self.createWaypoints()
+            self.trace(waypoints, dx, dy)
+            if self.check_cross():
+                print("Barn is full, need to sell something")
+                print("retry in 1 minute")
+                self.tasklist.addtask(1, self.animal, self.image, self.collect)
+                self.tasklist.sell_from_barn()
+                self.exit()
+                return
+            if not self.checkCollected():
+                print(f"Not all {self.product} collected")
+                print("retry in 1 minute")
+                self.tasklist.addtask(1, self.animal, self.image, self.collect)
+                self.exit()
+                return
+            print("Collection succesfull")
+            self.tasklist.removeWish(self.product,self.amount)
+            self.feed(True,waypoints)
+            return
+
+        #         self.checkJobs()
+        #     self.move_from()
+        #     return
+        # self.move_from()
+    #something went wrong
         print('something went wrong')
         self.tasklist.addtask(1, self.animal, self.image, self.collect)
-
-
-        #old (for referense)
-
-        #
-        #         x,y=location
-        #         animals=self.device.locate_item(self.temp_full,.45, offset=[3,3])
-        #         waypoints=[location]+self.device.getClose(animals, x, y, *self.margin)
-        #         if animals:
-        #             dx,dy=self.icon_collect
-        #             self.tap_and_trace(waypoints, dx, dy)
-        #             if not self.check_cross():
-        #                 self.tasklist.removeWish(self.product,self.amount)
-        #             self.tasklist.removeSchedule(self.product, self.amount)
-        #         if self.feed(waypoints):
-        #             self.checkJobs()
-        #         self.move_from()
-        #         return
-        #     self.move_from()
-        # #something went wrong
-        # print('something went wrong')
-        # self.tasklist.addtask(1, self.animal, self.image, self.collect)
