@@ -7,7 +7,7 @@ class Shop(HD):
         self.tasklist.addtask(1, f"checking for items to sell", self.image, self.checkItems)
         self.products=[]
 
-    def add(self, product, min_amount=6):
+    def add(self, product, min_amount=6,sell=False):
         self.products.append(ShopItem(product, min_amount))
 
     def checkItems(self):

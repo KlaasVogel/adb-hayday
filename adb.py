@@ -270,7 +270,7 @@ class Adb_Device():
                 for vector in loclist:
                     x,y=vector
                     cv2.circle(img_result, (x,y), 10, (0,255,0), -1)
-        cv2.imwrite(result_file, img_result)
+        # cv2.imwrite(result_file, img_result)
         self.output.update(img_result)
         if one and len(loclist):
             target=[self.res_x/2, self.res_y/2]

@@ -3,6 +3,7 @@ from math import isclose
 from time import sleep, time
 from glob import glob
 from adb import Template
+import json
 
 class HD():
     home=[Template(path.join('images','home_C.png'))]
@@ -22,6 +23,20 @@ class HD():
         self.image=file if path.isfile(file) else path.join('images','no_image.png')
         self.jobs=0
         self.waiting=0
+
+    @staticmethod
+    def loadJSON(filename):
+        file=path.join('data',f'{filename}.json')
+        try:
+            if path.isfile(file):
+                with open(file) as json_file:
+                    data = json.load(json_file)
+        except Exception as e:
+            print("ERROR")
+            print(e)
+            data=[]
+        finally:
+            return data
 
     @staticmethod
     def loadTemplates(map, name):

@@ -15,6 +15,8 @@ class Crops(list):
     sugarcane={'growtime': 30, 'threshold':.85, 'field':1, 'set':1, 'icon':[130, -310]}
     indigo=   {'growtime':120, 'threshold':.75, 'field':0, 'set':2, 'icon':[366, -255]}
     pumpkin=  {'growtime':180, 'threshold':.90, 'field':1, 'set':2, 'icon':[238, -135]}
+    cotton=   {'growtime':150, 'threshold':.90, 'field':0, 'set':2, 'icon':[321, -406]}
+    pepper=   {'growtime':0,   'threshold':.90, 'field':1, 'set':2, 'icon':[150, -300]}
 
     templates={}
     empty_templates=[]

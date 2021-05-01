@@ -7,58 +7,47 @@ from adb import Template
 import numpy as np
 
 class Pens(list):
-    device=None
-    tasklist=None
-    chicken={'eattime':20, 'product':'egg', 'food':'chicken feed','threshold':.75,'threshold_collect':0.95,'icon_feed':[-120,-240],'icon_collect':[-270,-115],'size':0,'center_offset':[-2,36]}
-    cow={'eattime':60, 'product':'milk', 'food':'cow feed','threshold':.75,'threshold_collect':0.95,'icon_feed':[-100,-240],'icon_collect':[-250,-115],'size':1,'center_offset':[8,35]}
-    pig={'eattime':240, 'product':'bacon', 'food':'pig feed','threshold':.75,'threshold_collect':0.98,'icon_feed':[-115,-285],'icon_collect':[-265,-185],'size':1,'center_offset':[-80,25]}
-    sheep={'eattime':360, 'product':'wool', 'food':'sheep feed','threshold':.75,'threshold_collect':0.9,'icon_feed':[-115,-285],'icon_collect':[-265,-185],'size':1,'center_offset':[-30,75]}
-    trace_paths={'chicken':[[0,0],[0,-8],[-15,0],[8,14],[15,0],[47,27],[80,7],[66,7],[35,-12],[-42,-17],[-89,7],[-104,7],[-37,19],[-55,33],[0,38],[0,55]],
-                 'pig':[[0,0],[0,-8],[-15,0],[0,8],[15,0],
-                        [ 30, 15],[ 60,  0],[ 30,-15],[0,-30],
-                        [-30,-15],[-60,  0],[-30, 15],[0, 30],
-                        [ 30, 45],[ 60, 30],[ 90, 15],[ 120,  0],[ 90,-15],[ 60,-30],[ 30,-45],[0,-60],
-                        [-30,-45],[-60,-30],[-90,-15],[-120,  0],[-90, 15],[-69, 30],[-30, 45],[0, 60]],
-           'cow':[[0,0],[ 30, 15],[ 60,  0],[ 30,-15],[0,-30],
-                        [-30,-15],[-60,  0],[-30, 15],[0, 30],
-                        [ 30, 45],[ 60, 30],[ 90, 15],[ 120,  0],[ 90,-15],[ 60,-30],[ 30,-45],[0,-60],
-                        [-30,-45],[-60,-30],[-90,-15],[-120,  0],[-90, 15],[-60, 30],[-30, 45],[0, 60],
-                        [ 30, 75],[ 60, 60],[ 90, 45],[ 120, 30],[150, 15]],
-               'sheep':[[0,0],[0,-8],[-15,0],[0,8],[15,0],
-                       [ 30, 15],[ 60,  0],[ 30,-15],[0,-30],
-                       [-30,-15],[-60,  0],[-30, 15],[0, 30],
-                       [ 30, 45],[ 60, 30],[ 90, 15],[ 120,  0],[ 90,-15],[ 60,-30],[ 30,-45],[0,-60],
-                       [-30,-45],[-60,-30],[-90,-15],[-120,  0],[-90, 15],[-69, 30],[-30, 45],[0, 60]] }
-
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist
         self.pen_templates={}
         self.collect_templates={}
         self.food_templates={}
+        self.animal_data=HD.loadJSON('animals')
+
     def add(self, animal, amount=1, location=[0,0]):
         position = HD.getPos(location)
-        if hasattr(self,animal):
+        if animal in self.animal_data:
             if animal not in self.pen_templates:
                 self.pen_templates[animal]=HD.loadTemplates('pens',animal)
                 self.collect_templates[animal]=HD.loadTemplates(path.join('pens','collect'),f'{animal}')
                 self.food_templates[animal]=HD.loadTemplates(path.join('pens','food'),f'{animal}')
-            data=getattr(self,animal)
-            data['animal']=animal
-            data['trace_path']=np.array(self.trace_paths.get(animal,[[0,0]]))
+            data=self.animal_data[animal]
+            product=data['product']
             data['temp_pen']=self.pen_templates[animal]
             data['temp_collect']=self.collect_templates[animal]
             data['temp_food']=self.food_templates[animal]
             data['position']=position
             data['amount']=amount
-            self.append(Pen(self.device, self.tasklist, data))
+            self.append(Pen(self.device, self.tasklist, animal, product))
+            self.setData(self[-1],data)
+
+    @staticmethod
+    def setData(pen, data):
+        for key, value in data:
+            setattr(pen, key, value)
+
+    def update(self):
+        self.animal_data=HD.loadJSON('animals')
+        for pen in self:
+            self.setData(pen, self.animal_data[pen.animal])
 
 class Pen(HD):
-    def __init__(self, device, tasklist, data):
-        HD.__init__(self, device, tasklist, data['product'])
-        for key,value in data.items():
-            setattr(self, key, value)
+    def __init__(self, device, tasklist, animal, product):
+        HD.__init__(self, device, tasklist, product)
+        self.animal=animal
         self.center=[0,0]
+        self.product=product
         self.tasklist.addProduct(self.product, self.addJob, self.getJobTime)
         # self.tasklist.addtask(0.05, self.animal, self.image, self.collect)
 
@@ -83,7 +72,7 @@ class Pen(HD):
 
     def checkFed(self):
         print(f"checking if all {self.animal} are fed")
-        result=self.device.locate_item(self.temp_food, 0.9)
+        result=self.device.locate_item(self.temp_food, self.threshold_food)
         if len(result):
             print('found')
             return False
@@ -121,11 +110,18 @@ class Pen(HD):
                 return True
         return False
 
+    def loadPath(self):
+        data=self.loadJSON('paths')
+        if not len(data):
+            data={'default':[[0,0]]}
+        trace_path=data[self.animal] if self.animal in data else data['default']
+        return np.array(trace_path)
+
     def createWaypoints(self):
-        waypoints = np.empty_like(self.trace_path)
-        # print(self.center)
-        for i in range(self.trace_path.shape[0]):
-          waypoints[i, :] = self.trace_path[i, :] + self.center
+        trace_path=self.loadPath()
+        waypoints = np.empty_like(trace_path)
+        for i in range(trace_path.shape[0]):
+          waypoints[i, :] = trace_path[i, :] + self.center
         return waypoints.tolist()
 
     def feed(self,atsite=False,waypoints=[]):
@@ -139,10 +135,10 @@ class Pen(HD):
             self.trace(waypoints, dx, dy)
             sleep(.3)
             if self.check_cross():
-                print("Missing Food. retry in 5 minutes")
+                print(f"Missing Food. retry in {self.wait} minutes")
                 self.setWaittime(5)
                 self.checkFood()
-                self.tasklist.addtask(5.2, f'Try Feeding {self.animal}', self.image, self.feed)
+                self.tasklist.addtask(self.wait+.2, f'Try Feeding {self.animal}', self.image, self.feed)
                 self.exit()
                 return False
             if not self.checkFed():
@@ -153,10 +149,12 @@ class Pen(HD):
                 return False
             self.checkFood()
             self.setWaittime(self.eattime)
+            self.scheduled=False
             self.checkJobs()
             self.exit()
             return True
         print('something went wrong')
+        self.exit()
         self.tasklist.addtask(1, self.animal, self.image, self.feed)
         return False
 
@@ -176,7 +174,6 @@ class Pen(HD):
                 self.tasklist.addtask(5, f"Try to collect {self.product}", self.image, self.collect)
                 self.exit()
                 return
-            self.scheduled=False
             dx,dy=self.icon_collect
             waypoints=self.createWaypoints()
             self.trace(waypoints, dx, dy)
@@ -198,10 +195,5 @@ class Pen(HD):
             self.feed(True,waypoints)
             return
 
-        #         self.checkJobs()
-        #     self.move_from()
-        #     return
-        # self.move_from()
-    #something went wrong
         print('something went wrong')
         self.tasklist.addtask(1, self.animal, self.image, self.collect)

@@ -116,6 +116,7 @@ class Station(HD):
 
     def start(self,product,icon,cooktime):
         recipe=self.recipes[product]
+        x,y=[0,0]
         if self.reset_screen():
             self.move_to()
             if self.check_diamond():
@@ -145,10 +146,10 @@ class Station(HD):
                     self.tasklist.addtask(cooktime+0.5, f'collect {product}', self.image, recipe.start_collect)
                     self.exit(x,y)
                     return
-
         #something went wrong, try again in one minute
         print('something went wrong')
         sleep(0.5)
+        self.exit(x,y)
         self.tasklist.addtask(1, f'{self.product}: create {product}', self.image, recipe.create)
 
     def exit(self,x,y):
