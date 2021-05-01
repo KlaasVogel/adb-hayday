@@ -1,0 +1,43 @@
+{
+  "feed mill": { "threshold":0.75, "recipes": {
+      "chicken feed": {"amount":3, "cooktime": 5, "ingredients": {"wheat": 2, "corn":1}},
+      "cow feed":     {"amount":3, "cooktime":10, "ingredients": {"soy": 2, "corn":1}},
+      "pig feed":     {"amount":3, "cooktime":20, "ingredients": {"carrot": 2, "soy":1}},
+      "sheep feed":   {"amount":3, "cooktime":30, "ingredients": {"wheat": 2, "soy":1}},
+      "goat feed":    {"amount":3, "cooktime":60, "ingredients": {}}   }},
+  "dairy": { "threshold":0.75,"recipes":{
+      "cream":        {"amount":1, "cooktime":20, "ingredients": {"milk": 1}},
+      "butter":       {"amount":1, "cooktime":30, "ingredients": {"milk": 2}},
+      "cheese":       {"amount":1, "cooktime":60, "ingredients": {"milk": 3}},
+      "cheese2":      {"amount":1, "cooktime":120, "ingredients": {}}   }},
+  "sugar mill": { "threshold":0.75,"recipes":{
+      "brown sugar":  {"amount":1, "cooktime":20, "ingredients": {"sugarcane": 1}},
+      "white sugar":  {"amount":1, "cooktime":40, "ingredients": {"sugarcane": 2}},
+      "syrup":        {"amount":1, "cooktime":90, "ingredients": {"sugarcane": 4}}   }},
+  "popcorn pot": { "threshold":0.75,"recipes":{
+      "popcorn":         {"amount":1, "cooktime":30, "ingredients": {"corn": 2}},
+      "buttered popcorn":{"amount":1, "cooktime":60, "ingredients": {"corn":2, "butter":1}},
+      "spicy popcorn":   {"amount":1, "cooktime":60, "ingredients": {"corn":2, "butter":1}}  }},
+  "bbq grill":{"threshold":0.75,"recipes":{
+      "pancake":       {"amount":1, "cooktime":30, "ingredients": {"egg": 3, "brown sugar":1}},
+      "bacon and eggs":{"amount":1, "cooktime":60, "ingredients": {"egg": 4,"bacon":2}},
+      "hamburger":     {"amount":1, "cooktime":120, "ingredients": {"bread":2,"bacon":2}},
+      "burger2":       {"amount":1, "cooktime":180, "ingredients": {}}  }},
+  "bakery":{"threshold":0.75,"recipes":{
+      "bread":            {"amount":1, "cooktime":5, "ingredients": {"wheat": 3}},
+      "corn bread":       {"amount":1, "cooktime":30, "ingredients": {"corn": 2, "egg":2}},
+      "cookie":           {"amount":1, "cooktime":60, "ingredients": {"wheat": 2, "egg":2, "brown sugar":1}},
+      "raspberry muffin": {"amount":1, "cooktime":45, "ingredients": {"wheat": 2, "egg":1, "raspberry": 2}},
+      "cupcake":          {"amount":1, "cooktime":120, "ingredients": {}} }},
+  "pie oven":{"threshold":0.75,"recipes":{
+      "carrot pie": {"amount":1, "cooktime":60, "ingredients": {"carrot": 3, "egg":1, "wheat":2}},
+      "pumpkin pie":{"amount":1, "cooktime":120, "ingredients": {"pumpkin": 3, "egg":1, "wheat":2}},
+      "bacon pie":  {"amount":1, "cooktime":180, "ingredients": {"bacon": 3, "egg":1, "wheat":2}},
+      "apple pie":  {"amount":1, "cooktime":120, "ingredients": {}},
+      "paella":     {"amount":1, "cooktime":120, "ingredients": {}}   }},
+  "loom": {"threshold":0.75,"recipes":{
+      "sweater":       {"amount":1, "cooktime":120, "ingredients": {"wool":2}},
+      "cotton fabric": {"amount":1, "cooktime":30, "ingredients": {"cotton": 3}},
+      "blue woolly hat": {"amount":1, "cooktime":60, "ingredients": {"wool":1,"indigo":1}},
+      "black something": {"amount":1, "cooktime":0, "ingredients": {}}  }}
+  }

@@ -10,12 +10,12 @@ class Crops(list):
     tasklist=None
     wheat=    {'growtime':  2, 'threshold':.85, 'field':0, 'set':1, 'icon':[366, -255]}
     corn=     {'growtime':  5, 'threshold':.90, 'field':1, 'set':1, 'icon':[238, -135]}
-    carrot=   {'growtime': 10, 'threshold':.90, 'field':0, 'set':1, 'icon':[ 15, -125]}
+    carrot=   {'growtime': 10, 'threshold':.85, 'field':0, 'set':1, 'icon':[ 15, -125]}
     soy=      {'growtime': 20, 'threshold':.85, 'field':0, 'set':1, 'icon':[313, -410]}
     sugarcane={'growtime': 30, 'threshold':.85, 'field':1, 'set':1, 'icon':[130, -310]}
     indigo=   {'growtime':120, 'threshold':.75, 'field':0, 'set':2, 'icon':[366, -255]}
     pumpkin=  {'growtime':180, 'threshold':.90, 'field':1, 'set':2, 'icon':[238, -135]}
-    cotton=   {'growtime':150, 'threshold':.90, 'field':0, 'set':2, 'icon':[321, -406]}
+    cotton=   {'growtime':150, 'threshold':.85, 'field':0, 'set':2, 'icon':[321, -406]}
     pepper=   {'growtime':0,   'threshold':.90, 'field':1, 'set':2, 'icon':[150, -300]}
 
     templates={}
@@ -126,6 +126,7 @@ class Crop(HD):
                     self.tasklist.removeWish(self.product,self.amount)
             self.tasklist.removeSchedule(self.product,self.amount)
             sleep(2)
+            self.setWaittime(5) #set wait if error sowing
             self.sow(fields)
             self.scheduled=False
             self.checkJobs()

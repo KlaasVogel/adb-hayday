@@ -5,15 +5,25 @@ from glob import glob
 from adb import Template
 import json
 
+class TemplateLibrary(dict):
+    def __init__(self, filepath):
+        filelist=glob(filepath)
+        for file in filelist:
+            filename=path.split(file)[-1]
+            product=path.splitext(filename)[0]
+            self[product]=Template(file)
+
 class HD():
     home=[Template(path.join('images','home_C.png'))]
     cross=[Template(path.join('images','X_C_.png'))]
+    info=[Template(path.join('images','info_C_.png'))]
     plus=[Template(path.join('images','plus_C_.png'))]
     grass=[Template(path.join('images','grass_C_.png'))]
     diamond=[Template(path.join('images','diamond_small.png'))]
     again=[Template(path.join('images','try_C_.png'))]
     arrows=[Template(path.join('images','arrows.png'))]
     cont=[Template(path.join('images','lvl_up_C_.png'))]
+    big_products=TemplateLibrary(path.join('images','products','big','*.png'))
 
     def __init__(self, device, tasklist, item):
         self.device=device
@@ -32,7 +42,7 @@ class HD():
                 with open(file) as json_file:
                     data = json.load(json_file)
         except Exception as e:
-            print("ERROR")
+            print(f"ERROR {filename}")
             print(e)
             data=[]
         finally:
@@ -45,6 +55,11 @@ class HD():
         for file in filelist:
             list.append(Template(file))
         return list
+
+    @staticmethod
+    def setData(item, data):
+        for key, value in data.items():
+            setattr(item, key, value)
 
     @staticmethod
     def getPos(location):
@@ -71,12 +86,18 @@ class HD():
     def move_from(self):
         pos_x,pos_y=self.position
         self.device.move(-pos_x, -pos_y)
+    def onscreen(self, product):
+        print(f"checking for {product}")
+        if product in self.big_products:
+            print(f"Template is found")
+            if len(self.device.locate_item([self.big_products[product]],last=True)):
+                return True
+        return False
     def check_cross(self):
         locations=self.device.locate_item(self.cross,.45)
         if len(locations):
             x,y=locations[0]
             self.device.tap(x,y)
-            sleep(1)
             return True
         return False
     def check_connection(self):
@@ -175,79 +196,3 @@ class HD():
         waypoints=[[x+item_x,y+item_y]]+locations
         self.device.trace(waypoints,size=150)
         sleep(.2)
-
-class Card():
-    def __init__(self,tasklist, location):
-        self.tasklist=tasklist
-        self.location = location
-        self.requests = []
-    def add(self,product):
-        if product not in self.requests:
-            self.requests.append(product)
-        self.tasklist.addWish(product)
-    def reset(self):
-        self.requests = []
-    def __repr__(self):
-        return "Cards:"+", ".join(self.requests)
-
-class Board(HD):
-    def __init__(self, device, tasklist):
-        self.device=device
-        self.tasklist=tasklist
-        self.image=path.join('images','board','car_button_C.png')
-        self.base_template=[Template(path.join('images','board','base_TR_.png'))]
-        self.complete_template=[Template(path.join('images','board','check_CR_.png'))]
-        self.card_template=[Template(path.join('images','board','pins_C_B.png'))]
-        self.product_templates={}
-        self.icon=[1335,775]
-        self.cards=[]
-        for location in [[290,290],[535,290],[775,290],
-                        [290,520],[535,520],[775,520],
-                        [290,730]]:
-            self.cards.append(Card(tasklist, location))
-        for file in glob(path.join('images', 'products','*.png')):
-            filename=path.split(file)[-1]
-            product=path.splitext(filename)[0]
-            self.product_templates[product]=Template(file)
-        self.tasklist.addtask(.1,'board',self.image,self.check)
-
-    def getCard(self,location):
-        list=[]
-        for card in self.cards:
-            list.append(card.location)
-        location=self.device.getClosest(list, location)
-        idx=list.index(location)
-        return self.cards[idx]
-
-    def collect(self, location):
-        x,y = location
-        card=self.getCard(location)
-        print(card)
-        self.device.tap(x,y)
-        x,y=self.icon
-        self.device.tap(x,y)
-        card.reset()
-
-    def check(self):
-        print('checking board')
-        nextcheck=1
-        if self.reset_screen():
-            location=self.device.locate_item(self.base_template,.75, one=True)
-            if len(location) and self.open(location):
-                checks=self.device.locate_item(self.complete_template,.9)
-                if len(checks):
-                    self.collect(checks[0])
-                    nextcheck=.3
-                else:
-                    print('update board info')
-                    for card in self.cards:
-                        x,y=card.location
-                        self.device.tap(x,y)
-                        sleep(.1)
-                        products=self.device.check_present(self.product_templates,.93)
-                        for product in products:
-                            print(f'found: {product}')
-                            card.add(product)
-                        nextcheck=5
-                self.check_cross()
-        self.tasklist.addtask(nextcheck,'board',self.image,self.check)

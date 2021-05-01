@@ -30,17 +30,12 @@ class Pens(list):
             data['position']=position
             data['amount']=amount
             self.append(Pen(self.device, self.tasklist, animal, product))
-            self.setData(self[-1],data)
-
-    @staticmethod
-    def setData(pen, data):
-        for key, value in data:
-            setattr(pen, key, value)
+            HD.setData(self[-1], data)
 
     def update(self):
         self.animal_data=HD.loadJSON('animals')
         for pen in self:
-            self.setData(pen, self.animal_data[pen.animal])
+            HD.setData(pen, self.animal_data[pen.animal])
 
 class Pen(HD):
     def __init__(self, device, tasklist, animal, product):
@@ -138,13 +133,13 @@ class Pen(HD):
                 print(f"Missing Food. retry in {self.wait} minutes")
                 self.setWaittime(5)
                 self.checkFood()
-                self.tasklist.addtask(self.wait+.2, f'Try Feeding {self.animal}', self.image, self.feed)
+                self.tasklist.addtask(self.wait+.2, f'Try Feeding {self.animal}', self.image, self.collect)
                 self.exit()
                 return False
             if not self.checkFed():
                 print("Not all animals are fed. Retry in 1 minute")
                 self.setWaittime(1)
-                self.tasklist.addtask(1.5, f"Feed: {self.animal}", self.image, self.feed)
+                self.tasklist.addtask(1.5, f"Feed: {self.animal}", self.image, self.collect)
                 self.exit()
                 return False
             self.checkFood()
@@ -177,21 +172,21 @@ class Pen(HD):
             dx,dy=self.icon_collect
             waypoints=self.createWaypoints()
             self.trace(waypoints, dx, dy)
+            self.tasklist.removeWish(self.product,self.amount)
             if self.check_cross():
                 print("Barn is full, need to sell something")
                 print("retry in 1 minute")
                 self.tasklist.addtask(1, self.animal, self.image, self.collect)
-                self.tasklist.sell_from_barn()
+                # self.tasklist.sell_from_barn()
                 self.exit()
                 return
             if not self.checkCollected():
                 print(f"Not all {self.product} collected")
-                print("retry in 1 minute")
-                self.tasklist.addtask(1, self.animal, self.image, self.collect)
+                print("retry in 5 minutes")
+                self.tasklist.addtask(5, self.animal, self.image, self.collect)
                 self.exit()
                 return
             print("Collection succesfull")
-            self.tasklist.removeWish(self.product,self.amount)
             self.feed(True,waypoints)
             return
 
