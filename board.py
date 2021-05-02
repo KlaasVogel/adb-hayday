@@ -7,6 +7,7 @@ from time import(sleep)
 
 class Board(HD):
     def __init__(self, device, tasklist):
+        HD.__init__(self, device, tasklist,'board')
         self.device=device
         self.tasklist=tasklist
         self.nextcheck=0.1

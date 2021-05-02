@@ -16,17 +16,8 @@ class TemplateLibrary(dict):
 
 class HD():
     # this needs to be placed inside of an update function to be able to change pictures while running
-    home=[Template(path.join('images','home_C.png'))]
-    cross=[Template(path.join('images','X_C_.png'))]
-    info=[Template(path.join('images','info_C_.png'))]
-    plus=[Template(path.join('images','plus_C_.png'))]
-    grass=[Template(path.join('images','grass_C_.png'))]
-    diamond=[Template(path.join('images','diamond_small.png'))]
-    again=[Template(path.join('images','try_C_.png'))]
-    arrows=[Template(path.join('images','arrows.png'))]
-    cont=[Template(path.join('images','lvl_up_C_.png'))]
     log=MyLogger('HD')
-
+    home=None
     def __init__(self, device, tasklist, item):
         self.device=device
         self.tasklist=tasklist
@@ -35,6 +26,12 @@ class HD():
         self.image=file if path.isfile(file) else path.join('images','no_image.png')
         self.jobs=0
         self.waiting=0
+        self.loadImages()
+        print(self.home)
+
+    def loadImages(self):
+        for name in ['home', 'cross', 'ínfo', 'plus', 'grass', 'diamond', 'again', 'arrows', 'cont']:
+            setattr(self,name,self.loadTemplates('base',name))
 
     @staticmethod
     def loadJSON(filename):
@@ -176,6 +173,7 @@ class HD():
                 self.device.swipe(800,600,1000,450,400)
             locations=self.check_home()
             count+=1
+            self.loadImages()
         if not locations:
             return False
         x,y=locations[0]

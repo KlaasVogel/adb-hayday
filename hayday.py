@@ -32,7 +32,6 @@ class MainApp(Tk):
         self.crops=Crops(self.device, self.tl)
         self.pens=Pens(self.device, self.tl)
 
-
         self.board=Board(self.device, self.tl)
 
 
