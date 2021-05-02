@@ -1,5 +1,5 @@
-from tkinter.ttk import Style, Frame, LabelFrame, Button, Checkbutton
-from tkinter import IntVar, Text
+from tkinter.ttk import Style, Frame, LabelFrame, Label, Button, Checkbutton
+from tkinter import IntVar, StringVar, Text
 
 def doNothing():
     pass
@@ -57,3 +57,47 @@ class TaskListFrame(LabelFrame):
         for line in data:
             self.text.insert("end",str(line)+"\n")
         self.parent.after(1000, self.update)
+
+
+class StationFrame(LabelFrame):
+    def __init__(self, parent, source):
+        LabelFrame.__init__(self, parent, text="Stations")
+        self.parent=parent
+        self.getData=source
+        self.rows=[]
+        self.parent.after(1000, self.update)
+
+    def update(self):
+        data=self.getData()
+        num_stations=len(data)
+        num_rows=len(self.rows)
+        if num_stations>num_rows:
+            for i in range(num_rows,num_stations):
+                self.rows.append(StationLabel(self,i))
+        if num_rows>num_stations:
+            for i in range(num_stations, num_rows):
+                for label in self.rows[-1]:
+                    label.destroy()
+                self.rows.pop(-1)
+        for idx,station in enumerate(data):
+            self.rows[idx].name.set(station['name'])
+            self.rows[idx].jobs.set(f"Jobs: {station['jobs']}")
+            self.rows[idx].time.set(f"Total Time: {station['time']}")
+            queue=", ".join(station['queue'])
+            self.rows[idx].queue.set(f"Queue: {queue}")
+        self.parent.after(5000, self.update)
+
+class StationLabel(list):
+    def __init__(self, parent, i):
+        self.name=StringVar()
+        self.jobs=StringVar()
+        self.time=StringVar()
+        self.queue=StringVar()
+        self.extend([Label(parent, textvariable=self.name),
+                    Label(parent, textvariable=self.jobs),
+                    Label(parent, textvariable=self.time),
+                    Label(parent, textvariable=self.queue)])
+        self[0].grid(row=1+i*2, column=1)
+        self[1].grid(row=1+i*2, column=2)
+        self[2].grid(row=1+i*2, column=3)
+        self[3].grid(row=2+i*2, column=1, columnspan=3)

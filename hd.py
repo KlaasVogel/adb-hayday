@@ -15,6 +15,7 @@ class TemplateLibrary(dict):
             self[product]=Template(file)
 
 class HD():
+    # this needs to be placed inside of an update function to be able to change pictures while running
     home=[Template(path.join('images','home_C.png'))]
     cross=[Template(path.join('images','X_C_.png'))]
     info=[Template(path.join('images','info_C_.png'))]
@@ -24,7 +25,6 @@ class HD():
     again=[Template(path.join('images','try_C_.png'))]
     arrows=[Template(path.join('images','arrows.png'))]
     cont=[Template(path.join('images','lvl_up_C_.png'))]
-    big_products=TemplateLibrary(path.join('images','products','big','*.png'))
     log=MyLogger('HD')
 
     def __init__(self, device, tasklist, item):
@@ -91,9 +91,10 @@ class HD():
         self.device.move(-pos_x, -pos_y)
     def onscreen(self, product):
         self.log.debug(f"checking for {product}")
-        if product in self.big_products:
+        templates=TemplateLibrary(path.join('images','products','big','*.png'))
+        if product in templates:
             self.log.debug(f"Template is found")
-            if len(self.device.locate_item([self.big_products[product]],last=True)):
+            if len(self.device.locate_item([templates[product]],last=True)):
                 return True
         return False
     def check_cross(self):

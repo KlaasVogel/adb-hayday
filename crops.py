@@ -19,6 +19,7 @@ class Crops(dict):
     def updateListData(self):
         settings=HD.loadJSON('crops')
         resources=HD.loadJSON('resources')
+        count={}
         if len(resources) and "crops" in resources and len(settings):
             if resources['crops']!=self.data or settings!=self.settings:
                 self.data=resources['crops']
@@ -27,7 +28,10 @@ class Crops(dict):
                     crop.enabled=False
                 for newcrop in self.data:
                     crop=newcrop['crop']
-                    name=newcrop['name']
+                    if crop not in count:
+                        count[crop]=0
+                    count[crop]+=1
+                    name=f"Crop {crop} [{count[crop]}]"
                     if crop in self.settings:
                         if name not in self:
                             self[name]=Crop(self.device, self.tasklist, crop)

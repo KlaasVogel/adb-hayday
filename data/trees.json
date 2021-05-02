@@ -1,0 +1,4 @@
+{
+  "apple":     {"growtime": 960, "times":3, "threshold":0.85, "icon":[-185, 0]},
+  "raspberry": {"growtime":1080, "times":2, "threshold":0.85, "icon":[-185, 0]}
+}

@@ -1,17 +1,37 @@
 {
   "crops": [
-    {"name":"wheat1"  ,"crop":"wheat",    "amount":4,"location":[  0, -3]},
-    {"name":"corn1"   ,"crop":"corn",     "amount":4,"location":[ -3, -3]},
-    {"name":"soy1"    ,"crop":"soy",      "amount":5,"location":[ -6, -3]},
-    {"name":"sugar1"  ,"crop":"sugarcane","amount":4,"location":[  3, -1]},
-    {"name":"carrot1" ,"crop":"carrot",   "amount":4,"location":[-11, -6]},
-    {"name":"indigo1" ,"crop":"indigo",   "amount":4,"location":[-11,  9]},
-    {"name":"pumpkin1","crop":"pumpkin",  "amount":4,"location":[-14,  8]},
-    {"name":"cotton1" ,"crop":"cotton",   "amount":4,"location":[  8, -5]}
+    {"crop":"wheat",    "amount":3,"location":[  0, -3]},
+    {"crop":"corn",     "amount":4,"location":[ -3, -3]},
+    {"crop":"soy",      "amount":8,"location":[ -6, -3]},
+    {"crop":"sugarcane","amount":3,"location":[  3, -1]},
+    {"crop":"carrot",   "amount":4,"location":[-11, -6]},
+    {"crop":"indigo",   "amount":4,"location":[-11,  9]},
+    {"crop":"pumpkin",  "amount":4,"location":[-14,  8]},
+    {"crop":"cotton",   "amount":4,"location":[  8, -5]}
   ],
   "trees": [
-    {"name":"apple1"    ,"fruit":"apples","amount":2,    "location":[-13,-13]},
-    {"name":"raspberry1","fruit":"raspberry","amount":2, "location":[ -8,-13]},
-    {"name":"raspberry2","fruit":"raspberry","amount":3, "location":[  6,  6]}
+    {"fruit":"apple",    "amount":2, "location":[-13,-13]},
+    {"fruit":"raspberry","amount":2, "location":[ -8,-13]},
+    {"fruit":"raspberry","amount":3, "location":[  6,  6]}
+  ],
+  "pens": [
+      {"animal":"chicken", "amount":6, "location":[-13,  2]},
+      {"animal":"chicken", "amount":6, "location":[  5, -6]},
+      {"animal":"cow",     "amount":5, "location":[ -8,  3]},
+      {"animal":"cow",     "amount":5, "location":[ -2,-13]},
+      {"animal":"pig",     "amount":5, "location":[-12, -5]},
+      {"animal":"pig",     "amount":5, "location":[-12,  6]},
+      {"animal":"sheep",   "amount":5, "location":[  4, 4]}
+  ],
+  "stations": [
+        {"station":"feed mill",   "location":[-3, 4]},
+        {"station":"feed mill",   "location":[-13, -13]},
+        {"station":"dairy",       "location":[-7, 8]},
+        {"station":"bakery",      "location":[3, 10]},
+        {"station":"bbq grill",   "location":[10, -2]},
+        {"station":"sugar mill",  "location":[-3, 14]},
+        {"station":"popcorn pot", "location":[-3, 10]},
+        {"station":"pie oven",    "location":[8, 3]},
+        {"station":"loom",        "location":[8,-8]}
   ]
 }

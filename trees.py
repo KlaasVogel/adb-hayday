@@ -1,56 +1,79 @@
 from hd import HD
 from time import sleep
 
-class Trees(list):
-    device=None
-    tasklist=None
-    apples={'growtime': 16*60, 'times':3, 'threshold':.85, 'icon':[-185, 0]}
-    templates={}
+class Trees(dict):
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist
+        self.data=[]
+        self.settings=[]
+        self.updateListData()
 
-    def add(self, product, amount=1, location=[0,0]):
-        position = HD.getPos(location)
-        if hasattr(self,product):
-            if product not in self.templates:
-                self.templates[product]=HD.loadTemplates('trees',product)
-            data=getattr(self,product)
-            data['product']=product
-            data['templates']=self.templates[product]
-            data['position']=position
-            for i in range(amount):
-                self.append(Tree(self.device, self.tasklist, data ))
+    def updateListData(self):
+        settings=HD.loadJSON('trees')
+        resources=HD.loadJSON('resources')
+        count={}
+        if len(resources) and "trees" in resources and len(settings):
+            if resources['trees']!=self.data or settings!=self.settings:
+                self.data=resources['trees']
+                self.settings=settings
+                for fruit in self.values():
+                    fruit.enabled=False
+                for newfruit in self.data:
+                    fruit=newfruit['fruit']
+                    if fruit not in count:
+                        count[fruit]=0
+                    count[fruit]+=1
+                    for i in range(newfruit['amount']):
+                        name=f"{fruit} [{count[fruit]}-{i}]"
+                        if fruit in self.settings:
+                            if name not in self:
+                                self[name]=Tree(self.device, self.tasklist, fruit)
+                            data=self.settings[fruit]
+                            data['name']=name
+                            data['enabled']=True
+                            data['position']=HD.getPos(newfruit['location'])
+                            data['templates']=HD.loadTemplates('trees',fruit)
+                            data['update']=self.updateListData
+                            for key,value in data.items():
+                                setattr(self[name], key, value)
 
 class Tree(HD):
-    def __init__(self, device, tasklist, data):
-        HD.__init__(self, device, tasklist, data['product'])
-        for key,value in data.items():
-            setattr(self, key, value)
+    def __init__(self, device, tasklist, product):
+        HD.__init__(self, device, tasklist, product)
+        self.product=product
+        self.enabled=True
         self.tasklist.addProduct(self.product, self.addJob, self.getJobTime)
 
     def harvest(self):
         print(f'harvesting {self.product}')
+        self.update()
+        if not self.enabled:
+            return
         if self.reset_screen():
-            wait=2
             self.move_to()
+            self.tasklist.removeSchedule(self.product,self.times)
             tree=self.device.locate_item(self.templates, threshold=self.threshold, one=True)
-            if len(tree):
-                x,y=tree
-                dx,dy=self.icon
-                self.device.tap(x,y)
-                for i in range(self.times):
-                    self.device.swipe(x+dx,y+dy,x,y,400)
-                    sleep(.5)
-                if not self.check_cross():
-                    self.tasklist.removeWish(self.product,self.times)
-                    wait=self.growtime+0.5
-                self.tasklist.removeSchedule(self.product,self.times)
+            if not len(tree):
+                # could not find tree, skip to next tree
+                self.setWaittime(60)
                 self.scheduled=False
-                self.setWaittime(wait)
                 return
+            x,y=tree
+            dx,dy=self.icon
+            self.device.tap(x,y)
+            for i in range(self.times):
+                self.device.swipe(x+dx,y+dy,x,y,400)
+                sleep(.5)
+            if not self.check_cross():
+                self.tasklist.removeWish(self.product,self.times)
+                wait=self.growtime+0.5
+                self.setWaittime(wait)
+                self.scheduled=False
+                return
+            self.setWaittime(5)
         print("something went wrong....resetting")
-        self.tasklist.addtask(1,f'harvest {self.product}' ,self.image, self.harvest)
+        self.tasklist.addtask(5,f'{self.name} - harvest: {self.product}' ,self.image, self.harvest)
 
     def getJobTime(self):
         waittime=self.getWaitTime()
@@ -58,18 +81,21 @@ class Tree(HD):
         return waittime
 
     def addJob(self):
-        self.jobs+=1
-        self.checkJobs()
-        return self.times
+        if self.enabled:
+            self.jobs+=1
+            self.checkJobs()
+            return self.times
+        return 0
 
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
+        self.update()
         wait = self.getWaitTime()
-        if not self.scheduled:
+        if not self.scheduled and self.enabled:
             if self.jobs > 0 :
                 print('adding task')
                 self.jobs+=-1
                 self.scheduled=True
-                self.tasklist.addtask(wait/60+0.1, f'harvest {self.product}', self.image, self.harvest)
+                self.tasklist.addtask(wait/60+0.1, f'{self.name} - harvest: {self.product}', self.image, self.harvest)
                 return
             # self.tasklist.reset(self.product)

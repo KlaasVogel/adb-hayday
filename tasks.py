@@ -77,6 +77,8 @@ class Tasklist(dict):
             self.wishlist[product]['scheduled']-=amount
             if self.wishlist[product]['scheduled']<0:
                 self.wishlist[product]['scheduled']=0
+            if self.wishlist[product]['scheduled']==0 and self.wishlist[product]['amount']==0:
+                self.wishlist.pop(product)
     def printlist(self):
         cur_time=int(time())
         if not len(self):

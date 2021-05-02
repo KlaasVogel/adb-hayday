@@ -8,36 +8,47 @@ import numpy as np
 import math
 from math import sin, cos, pi
 
-class Pens(list):
+class Pens(dict):
+    device=None
+    tasklist=None
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist
-        self.pen_templates={}
-        self.collect_templates={}
-        self.food_templates={}
-        self.animal_data=HD.loadJSON('animals')
+        self.data=[]
+        self.settings=[]
+        self.updateListData()
 
-    def add(self, animal, amount=1, location=[0,0]):
-        position = HD.getPos(location)
-        if animal in self.animal_data:
-            if animal not in self.pen_templates:
-                self.pen_templates[animal]=HD.loadTemplates('pens',animal)
-                self.collect_templates[animal]=HD.loadTemplates(path.join('pens','collect'),f'{animal}')
-                self.food_templates[animal]=HD.loadTemplates(path.join('pens','food'),f'{animal}')
-            data=self.animal_data[animal]
-            product=data['product']
-            data['temp_pen']=self.pen_templates[animal]
-            data['temp_collect']=self.collect_templates[animal]
-            data['temp_food']=self.food_templates[animal]
-            data['position']=position
-            data['amount']=amount
-            self.append(Pen(self.device, self.tasklist, animal, product))
-            HD.setData(self[-1], data)
-
-    def update(self):
-        self.animal_data=HD.loadJSON('animals')
-        for pen in self:
-            HD.setData(pen, self.animal_data[pen.animal])
+    def updateListData(self):
+        settings=HD.loadJSON('animals')
+        resources=HD.loadJSON('resources')
+        count={}
+        if len(resources) and "pens" in resources and len(settings):
+            if resources['pens']!=self.data or settings!=self.settings:
+                self.data=resources['pens']
+                self.settings=settings
+                for pen in self.values():
+                    pen.enabled=False
+                for newpen in self.data:
+                    animal=newpen['animal']
+                    if animal not in count:
+                        count[animal]=0
+                    count[animal]+=1
+                    name=f"Pen {animal} [{count[animal]}]"
+                    if animal in self.settings:
+                        data=self.settings[animal]
+                        product=data['product']
+                        if name not in self:
+                            self[name]=Pen(self.device, self.tasklist, animal, product)
+                        data['name']=name
+                        data['enabled']=True
+                        data['position']=HD.getPos(newpen['location'])
+                        data['temp_pen']=HD.loadTemplates('pens',animal)
+                        data['temp_collect']=HD.loadTemplates(path.join('pens','collect'),animal)
+                        data['temp_food']=HD.loadTemplates(path.join('pens','food'),animal)
+                        data['amount']=newpen['amount']
+                        data['update']=self.updateListData
+                        for key,value in data.items():
+                            setattr(self[name], key, value)
 
 class Pen(HD):
     pencil=HD.loadTemplates('pens','pencil')
@@ -150,6 +161,9 @@ class Pen(HD):
 
     def feed(self,atsite=False):
         print('feeding')
+        self.update()
+        if not self.enabled:
+            return
         if atsite or self.locate_pen():
             if atsite:
                 self.execute(self.checkFed,self.icon_feed,steps=1)
@@ -175,6 +189,9 @@ class Pen(HD):
 
     def collect(self):
         print(f'collecting: {self.product}')
+        self.update()
+        if not self.enabled:
+            return
         if self.locate_pen():
             self.tasklist.removeSchedule(self.product,self.amount)
             self.execute(self.checkCollected,self.icon_collect)

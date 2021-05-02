@@ -6,34 +6,59 @@ from glob import glob
 from adb import Template
 import numpy as np
 
-class Stations(list):
+class Stations(dict):
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist
-        self.templates={}
+        self.data=[]
+        self.settings=[]
         self.icons=[ [],[],  #location of recipes in relation to info-button
-                    [[-543, -13],[-702, 90] ], #2
-                    [[-560, -95],[-715, 15],[-785, 165] ], #3
-                    [[-500,-145],[-665,-77],[-800,  50],[-845,205] ], #4
-                    [[-565, -15],[-700,100],[-605,-170],[-800,-75],[-915,110] ] ] #5
-        self.station_data=HD.loadJSON('stations')
+                        [[-543, -13],[-702, 90] ], #2
+                        [[-560, -95],[-715, 15],[-785, 165] ], #3
+                        [[-500,-145],[-665,-77],[-800,  50],[-845,205] ], #4
+                        [[-565, -15],[-700,100],[-605,-170],[-800,-75],[-915,110] ] ] #5
+        self.updateListData()
 
-    def add(self, station, location):
-        position = HD.getPos(location)
-        if station in self.station_data:
-            if station not in self.templates:
-                self.templates[station]=HD.loadTemplates('stations',station)
-            data=self.station_data[station]
-            products=data['recipes'].keys()
-            num_recipes=len(data['recipes'])
-            icons=self.icons[num_recipes]
-            data['icons']=dict(zip(products,icons))
-            data['name']=station
-            data['templates']=self.templates[station]
-            data['position']=position
-            self.append(Station(self.device, self.tasklist, station))
-            HD.setData(self[-1], data)
-            self[-1].setRecipes()
+    def updateListData(self):
+        settings=HD.loadJSON('stations')
+        resources=HD.loadJSON('resources')
+        count={}
+        if len(resources) and "stations" in resources and len(settings):
+            if resources['stations']!=self.data or settings!=self.settings:
+                self.data=resources['stations']
+                self.settings=settings
+                for station in self.values():
+                    station.enabled=False
+                for newstation in self.data:
+                    station=newstation['station']
+                    if station not in count:
+                        count[station]=0
+                    count[station]+=1
+                    name=f"{station} [{count[station]}]"
+                    if station in self.settings:
+                        data=self.settings[station]
+                        products=data['recipes'].keys()
+                        num_recipes=len(data['recipes'])
+                        icons=self.icons[num_recipes]
+                        data['icons']=dict(zip(products,icons))
+
+                        if name not in self:
+                            self[name]=Station(self.device, self.tasklist, station )
+                        data['name']=name
+                        data['enabled']=True
+                        data['position']=HD.getPos(newstation['location'])
+                        data['templates']=HD.loadTemplates('stations',station)
+                        data['update']=self.updateListData
+                        for key,value in data.items():
+                            setattr(self[name], key, value)
+                        self[name].setRecipes()
+
+    def getList(self):
+        data=[]
+        for name,station in self.items():
+            totaltime=self.tasklist.printtime(int(station.getTotalTime()*60))
+            data.append({"name":name, "jobs": len(station.jobs), "time":totaltime, "queue":station.queue})
+        return data
 
 class Station(HD):
     def __init__(self, device, tasklist, station):
@@ -138,7 +163,7 @@ class Station(HD):
                 x,y=location
                 self.device.tap(x,y)
                 sleep(.5)
-                self.log.debug(f"should be opened now")
+                self.log.debug(f"should be ostationed now")
                 info_button=self.device.locate_item(self.info, 0.85, one=True)
                 if len(info_button):
                     bas=np.add(info_button,self.base)
@@ -186,6 +211,8 @@ class Recipe():
             station.tasklist.addProduct(product, self.addJob, station.getTotalTime)
 
     def addJob(self,error=False):
+        if not self.station.enabled:
+            return 0
         self.station.queue.append(self.product)
         if not error:
             self.requestIngredients()
