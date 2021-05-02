@@ -45,6 +45,8 @@ class HD():
             print(f"ERROR {filename}")
             print(e)
             data=[]
+            sleep(5)
+            quit()
         finally:
             return data
 

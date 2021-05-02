@@ -11,7 +11,7 @@ class Crops(list):
     wheat=    {'growtime':  2, 'threshold':.85, 'field':0, 'set':1, 'icon':[366, -255]}
     corn=     {'growtime':  5, 'threshold':.90, 'field':1, 'set':1, 'icon':[238, -135]}
     carrot=   {'growtime': 10, 'threshold':.85, 'field':0, 'set':1, 'icon':[ 15, -125]}
-    soy=      {'growtime': 20, 'threshold':.85, 'field':0, 'set':1, 'icon':[313, -410]}
+    soy=      {'growtime': 20, 'threshold':.83, 'field':0, 'set':1, 'icon':[313, -410]}
     sugarcane={'growtime': 30, 'threshold':.85, 'field':1, 'set':1, 'icon':[130, -310]}
     indigo=   {'growtime':120, 'threshold':.75, 'field':0, 'set':2, 'icon':[366, -255]}
     pumpkin=  {'growtime':180, 'threshold':.90, 'field':1, 'set':2, 'icon':[238, -135]}

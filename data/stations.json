@@ -39,5 +39,6 @@
       "sweater":       {"amount":1, "cooktime":120, "ingredients": {"wool":2}},
       "cotton fabric": {"amount":1, "cooktime":30, "ingredients": {"cotton": 3}},
       "blue woolly hat": {"amount":1, "cooktime":60, "ingredients": {"wool":1,"indigo":1}},
-      "black something": {"amount":1, "cooktime":0, "ingredients": {}}  }}
+      "blue sweater": {"amount":1, "cooktime":180, "ingredients": {"wool":2,"indigo":2}},
+      "scarf": {"amount":1, "cooktime":0, "ingredients": {}}  }}
   }

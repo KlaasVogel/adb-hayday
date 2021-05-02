@@ -1,13 +1,17 @@
 {
-"chicken": { "eattime":20, "wait":5, "product":"egg", "food":"chicken feed","threshold":0.75,"center_offset":[10,36],
+"chicken": { "eattime":20, "wait":5, "product":"egg", "food":"chicken feed",
+  "threshold":0.75,"center_offset":[10,36],"pencil_offset":[323,22],
   "icon_collect":[-270,-115],"threshold_collect":0.95,"icon_feed":[-120,-240],"threshold_food":0.95 },
 
-"cow": { "eattime":60, "wait":10, "product":"milk", "food":"cow feed","threshold":0.75,"center_offset":[8,35],
+"cow": { "eattime":60, "wait":10, "product":"milk", "food":"cow feed",
+  "threshold":0.75,"center_offset":[8,35],"pencil_offset":[323,22],
   "threshold_collect":0.95,"icon_collect":[-250,-115],"icon_feed":[-100,-240],"threshold_food":0.95 },
 
-"pig": { "eattime":240, "wait":20, "product":"bacon", "food":"pig feed","threshold":0.75,"center_offset":[-80,25],
+"pig": { "eattime":240, "wait":20, "product":"bacon", "food":"pig feed",
+  "threshold":0.75,"center_offset":[-80,25],"pencil_offset":[323,22],
   "threshold_collect":0.98,"icon_collect":[-265,-185],"icon_feed":[-115,-285],"threshold_food":0.98 },
 
-"sheep": { "eattime":360, "wait":30, "product":"wool", "food":"sheep feed","threshold":0.75,"center_offset":[-30,75],
+"sheep": { "eattime":360, "wait":30, "product":"wool", "food":"sheep feed",
+  "threshold":0.75,"center_offset":[-30,75],"pencil_offset":[323,22],
   "threshold_collect":0.9,"icon_collect":[-265,-185],"icon_feed":[-115,-285],"threshold_food":0.98 }
 }

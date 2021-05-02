@@ -7,7 +7,7 @@ from shop import Shop
 from tasks import Tasklist
 from adb import Adb_Device, ShowOutput
 from tkinter import Tk, Frame
-from gui import Buttons, Output
+from gui import Buttons, Output, TaskListFrame, OrdersFrame
 from threading import Thread
 
 class MainApp(Tk):
@@ -21,11 +21,17 @@ class MainApp(Tk):
         self.pens=Pens(self.device, self.tl)
         self.stations=Stations(self.device, self.tl)
         self.board=Board(self.device, self.tl)
+
         self.buttons=Buttons(self, start=self.tl.start, pause= self.tl.hold, stop=self.tl.stop, capture=self.device.printScreen)
-        self.output=Output(self)
-        self.device.output.show=self.output.show.get
-        self.output.grid(row=1, column=1)
         self.buttons.grid(row=2,column=1)
+        # self.output=Output(self)
+        # self.output.grid(row=1, column=1)
+        self.tasks=TaskListFrame(self, self.tl.getTaskList)
+        self.tasks.grid(row=3, column=1)
+
+        self.orders=OrdersFrame(self, self.tl.getWishList)
+        self.orders.grid(row=1, rowspan=3, column=2)
+
         self.shop.add('egg', min_amount=2, sell=True)
         self.shop.add('milk', min_amount=2, sell=True)
         self.shop.add('bacon', min_amount=2, sell=False)
@@ -49,7 +55,7 @@ class MainApp(Tk):
         self.crops.add('soy',       amount=4, location=[ -6, -3])
         self.crops.add('sugarcane', amount=5, location=[  3, -1])
         self.crops.add('carrot',    amount=4, location=[-11, -6])
-        self.crops.add('indigo',    amount=4, location=[-11,  7])
+        self.crops.add('indigo',    amount=4, location=[-11,  9])
         self.crops.add('pumpkin',   amount=6, location=[-14,  8])
         self.crops.add('cotton',    amount=4, location=[ 8,  -5])
         self.pens.add('chicken', amount=6, location=[-13,  2])

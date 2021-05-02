@@ -39,6 +39,7 @@ class Tasklist(dict):
         self.addWish=self.wishlist.add
         self.getWish=self.wishlist.getWish
         self.checkWish=self.wishlist.checkWish
+
     def addtask(self,waittime,name,image,job):
         print('adding job')
         new_time=int(time())+waittime*60
@@ -103,6 +104,42 @@ class Tasklist(dict):
                     self.busy=False
             self.printlist()
             sleep(1)
+
+    def getTaskList(self):
+        data=[]
+        if not len(self):
+            data=['no jobs scheduled']
+        for tasktime in sorted(self):
+            remaining_time=tasktime-int(time())
+            task=self[tasktime]
+            data.append(f"{task['name']} in {self.printtime(remaining_time)}")
+        return data
+
+    def getWishList(self):
+        data=[]
+        for product,details in self.wishlist.items():
+            data.append(f"{product} - {details}")
+        return data
+
+    @staticmethod
+    def printtime(seconds):
+        if seconds <= 60:
+            return f"{seconds} seconds"
+        if seconds <= 60*60:
+            min=int(seconds/60)
+            sec=seconds%60
+            return f"{min} minute(s) and {sec} seconds"
+        hour=int(seconds/3600)
+        min=seconds%3600
+        sec=seconds%60
+        text=f"{hour} hour(s)"
+        sep=", " if (min and sec) else " and "
+        text=text+sep
+        if min:
+            text=text+f"{min} minute(s)"
+        if sec:
+            text=text+f" and {sec} seconds"
+        return text
 
     def start(self):
         self.running=True
