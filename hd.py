@@ -3,6 +3,7 @@ from math import isclose
 from time import sleep, time
 from glob import glob
 from adb import Template
+from logger import MyLogger
 import json
 
 class TemplateLibrary(dict):
@@ -24,6 +25,7 @@ class HD():
     arrows=[Template(path.join('images','arrows.png'))]
     cont=[Template(path.join('images','lvl_up_C_.png'))]
     big_products=TemplateLibrary(path.join('images','products','big','*.png'))
+    log=MyLogger('HD')
 
     def __init__(self, device, tasklist, item):
         self.device=device
@@ -46,7 +48,6 @@ class HD():
             print(e)
             data=[]
             sleep(5)
-            quit()
         finally:
             return data
 
@@ -89,9 +90,9 @@ class HD():
         pos_x,pos_y=self.position
         self.device.move(-pos_x, -pos_y)
     def onscreen(self, product):
-        print(f"checking for {product}")
+        self.log.debug(f"checking for {product}")
         if product in self.big_products:
-            print(f"Template is found")
+            self.log.debug(f"Template is found")
             if len(self.device.locate_item([self.big_products[product]],last=True)):
                 return True
         return False
@@ -130,7 +131,7 @@ class HD():
             sleep(.3)
             self.click_green()
     def click_green(self):
-        print('click on grass')
+        self.log.debug('click on grass')
         location=self.device.locate_item(self.grass,.45,one=True)
         if len(location):
             x,y=location
@@ -154,11 +155,11 @@ class HD():
     def check_home(self):
         locations=self.device.locate_item(self.home,.85)
         if not len(locations):
-            print('ohoh')
+            self.log.debug('ohoh')
             return False
         return locations
     def reset_screen(self):
-        print('cleaning')
+        self.log.debug('cleaning')
         locations=self.check_home()
         count=0
         while not locations or count>=3:
@@ -177,15 +178,15 @@ class HD():
         if not locations:
             return False
         x,y=locations[0]
-        print(f'home: {x},{y}')
+        self.log.debug(f'home: {x},{y}')
         if not (isclose(x,800,abs_tol=100) and isclose(y,550,abs_tol=75)):
             self.device.swipe(x,y,800,550,1000)
         sleep(.1)
-        print('cleaning done')
+        self.log.debug('cleaning done')
         return True
 
     def tap_and_trace(self, locations, item_x=0, item_y=0):
-        print('tap and trace')
+        self.log.debug('tap and trace')
         x,y=locations[0]
         self.device.tap(x,y)
         waypoints=[[x+item_x,y+item_y]]+locations
@@ -193,7 +194,7 @@ class HD():
         sleep(.5)
 
     def trace(self, locations, item_x=0, item_y=0):
-        print('trace')
+        self.log.debug('trace')
         x,y=locations[0]
         waypoints=[[x+item_x,y+item_y]]+locations
         self.device.trace(waypoints,size=150)

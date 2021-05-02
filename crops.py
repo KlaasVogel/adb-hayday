@@ -5,48 +5,50 @@ from time import sleep, time
 from glob import glob
 from adb import Template
 
-class Crops(list):
+class Crops(dict):
     device=None
     tasklist=None
-    wheat=    {'growtime':  2, 'threshold':.85, 'field':0, 'set':1, 'icon':[366, -255]}
-    corn=     {'growtime':  5, 'threshold':.90, 'field':1, 'set':1, 'icon':[238, -135]}
-    carrot=   {'growtime': 10, 'threshold':.85, 'field':0, 'set':1, 'icon':[ 15, -125]}
-    soy=      {'growtime': 20, 'threshold':.83, 'field':0, 'set':1, 'icon':[313, -410]}
-    sugarcane={'growtime': 30, 'threshold':.85, 'field':1, 'set':1, 'icon':[130, -310]}
-    indigo=   {'growtime':120, 'threshold':.75, 'field':0, 'set':2, 'icon':[366, -255]}
-    pumpkin=  {'growtime':180, 'threshold':.90, 'field':1, 'set':2, 'icon':[238, -135]}
-    cotton=   {'growtime':150, 'threshold':.85, 'field':0, 'set':2, 'icon':[321, -406]}
-    pepper=   {'growtime':0,   'threshold':.90, 'field':1, 'set':2, 'icon':[150, -300]}
-
-    templates={}
-    empty_templates=[]
+    switch_template=HD.loadTemplates('crops','switch*')
     def __init__(self, device, tasklist):
         self.device=device
         self.tasklist=tasklist
-        self.empty_templates.append(HD.loadTemplates('crops','empty_0*'))
-        self.empty_templates.append(HD.loadTemplates('crops','empty_1*'))
-        self.switch_template=HD.loadTemplates('crops','switch*')
-    def add(self, crop, amount=1, location=[0,0]):
-        position = HD.getPos(location)
-        if hasattr(self,crop):
-            if crop not in self.templates:
-                self.templates[crop]=HD.loadTemplates('crops',crop)
-            data=getattr(self,crop)
-            data['product']=crop
-            data['temp_full']=self.templates[crop]
-            data['temp_empty']=self.empty_templates[data['field']]
-            data['temp_switch']=self.switch_template
-            data['amount']=amount
-            data['position']=position
-            self.append(Crop(self.device, self.tasklist, data))
+        self.data=[]
+        self.settings=[]
+        self.updateListData()
+
+    def updateListData(self):
+        settings=HD.loadJSON('crops')
+        resources=HD.loadJSON('resources')
+        if len(resources) and "crops" in resources and len(settings):
+            if resources['crops']!=self.data or settings!=self.settings:
+                self.data=resources['crops']
+                self.settings=settings
+                for crop in self.values():
+                    crop.enabled=False
+                for newcrop in self.data:
+                    crop=newcrop['crop']
+                    name=newcrop['name']
+                    if crop in self.settings:
+                        if name not in self:
+                            self[name]=Crop(self.device, self.tasklist, crop)
+                        data=self.settings[crop]
+                        data['enabled']=True
+                        data['position']=HD.getPos(newcrop['location'])
+                        data['temp_full']=HD.loadTemplates('crops',crop)
+                        data['temp_empty']=HD.loadTemplates('crops',f"empty_{data['field']}*")
+                        data['temp_switch']=self.switch_template
+                        data['amount']=newcrop['amount']
+                        data['update']=self.updateListData
+                        for key,value in data.items():
+                            setattr(self[name], key, value)
 
 class Crop(HD):
-    def __init__(self, device, tasklist, data):
-        HD.__init__(self, device, tasklist,data['product'])
-        for key,value in data.items():
-            setattr(self, key, value)
+    def __init__(self, device, tasklist, crop):
+        HD.__init__(self, device, tasklist, crop)
+        self.product=crop
         self.switch=[-485,120]
         self.scythe=[-190,-80]
+        self.enabled=True
         self.tasklist.addProduct(self.product, self.addJob, self.getJobTime)
 
     def getJobTime(self):
@@ -55,14 +57,17 @@ class Crop(HD):
         return waittime
 
     def addJob(self):
+        if not self.enabled:
+            return 0
         self.jobs+=1
         self.checkJobs()
         return self.amount
 
     def checkJobs(self):
         print(f"checking jobs for {self.product}")
+        self.update()
         wait = self.getWaitTime()+ 0.1
-        if not self.scheduled:
+        if not self.scheduled and self.enabled:
             if self.jobs > 0 :
                 print('adding task')
                 self.jobs+=-1

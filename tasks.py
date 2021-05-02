@@ -41,7 +41,7 @@ class Tasklist(dict):
         self.checkWish=self.wishlist.checkWish
 
     def addtask(self,waittime,name,image,job):
-        print('adding job')
+        print(f'\n adding job for {name}')
         new_time=int(time())+waittime*60
         while new_time in self:
             new_time+=1
@@ -119,19 +119,19 @@ class Tasklist(dict):
         data=[]
         for product,details in self.wishlist.items():
             data.append(f"{product} - {details}")
-        return data
+        return sorted(data)
 
     @staticmethod
     def printtime(seconds):
         if seconds <= 60:
-            return f"{seconds} seconds"
+            return f"{int(seconds)} seconds"
         if seconds <= 60*60:
             min=int(seconds/60)
-            sec=seconds%60
+            sec=int(seconds%60)
             return f"{min} minute(s) and {sec} seconds"
         hour=int(seconds/3600)
-        min=seconds%3600
-        sec=seconds%60
+        min=int((seconds%3600)/60)
+        sec=int(seconds%60)
         text=f"{hour} hour(s)"
         sep=", " if (min and sec) else " and "
         text=text+sep

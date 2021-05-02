@@ -1,0 +1,17 @@
+{
+  "crops": [
+    {"name":"wheat1"  ,"crop":"wheat",    "amount":4,"location":[  0, -3]},
+    {"name":"corn1"   ,"crop":"corn",     "amount":4,"location":[ -3, -3]},
+    {"name":"soy1"    ,"crop":"soy",      "amount":5,"location":[ -6, -3]},
+    {"name":"sugar1"  ,"crop":"sugarcane","amount":4,"location":[  3, -1]},
+    {"name":"carrot1" ,"crop":"carrot",   "amount":4,"location":[-11, -6]},
+    {"name":"indigo1" ,"crop":"indigo",   "amount":4,"location":[-11,  9]},
+    {"name":"pumpkin1","crop":"pumpkin",  "amount":4,"location":[-14,  8]},
+    {"name":"cotton1" ,"crop":"cotton",   "amount":4,"location":[  8, -5]}
+  ],
+  "trees": [
+    {"name":"apple1"    ,"fruit":"apples","amount":2,    "location":[-13,-13]},
+    {"name":"raspberry1","fruit":"raspberry","amount":2, "location":[ -8,-13]},
+    {"name":"raspberry2","fruit":"raspberry","amount":3, "location":[  6,  6]}
+  ]
+}

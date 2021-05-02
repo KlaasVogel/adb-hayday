@@ -8,7 +8,7 @@
   "threshold_collect":0.95,"icon_collect":[-250,-115],"icon_feed":[-100,-240],"threshold_food":0.95 },
 
 "pig": { "eattime":240, "wait":20, "product":"bacon", "food":"pig feed",
-  "threshold":0.75,"center_offset":[-80,25],"pencil_offset":[323,22],
+  "threshold":0.75,"center_offset":[-80,25],"pencil_offset":[323,43],
   "threshold_collect":0.98,"icon_collect":[-265,-185],"icon_feed":[-115,-285],"threshold_food":0.98 },
 
 "sheep": { "eattime":360, "wait":30, "product":"wool", "food":"sheep feed",

@@ -40,5 +40,8 @@
       "cotton fabric": {"amount":1, "cooktime":30, "ingredients": {"cotton": 3}},
       "blue woolly hat": {"amount":1, "cooktime":60, "ingredients": {"wool":1,"indigo":1}},
       "blue sweater": {"amount":1, "cooktime":180, "ingredients": {"wool":2,"indigo":2}},
-      "scarf": {"amount":1, "cooktime":0, "ingredients": {}}  }}
+      "scarf": {"amount":1, "cooktime":0, "ingredients": {}}  }},
+  "sewing machine": {"threshold":0.75,"recipes":{
+      "cotton shirt":  {"amount":1, "cooktime":45, "ingredients": {"cotton fabric":2}},
+      "pants": {"amount":1, "cooktime":0, "ingredients": {}}  }}
   }

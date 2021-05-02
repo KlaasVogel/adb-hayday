@@ -4,7 +4,7 @@ from time import sleep
 class Shop(HD):
     def __init__(self, device, tasklist):
         HD.__init__(self, device, tasklist, 'money')
-        self.tasklist.addtask(1, f"checking for items to sell", self.image, self.checkItems)
+        self.tasklist.addtask(20, f"checking for items to sell", self.image, self.checkItems)
         self.products=[]
 
     def add(self, product, min_amount=6,sell=False):
