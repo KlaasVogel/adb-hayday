@@ -19,7 +19,7 @@ class Wishlist(dict):
         return [0,0]
     def check(self,product,amount):
         if product in self:
-            wish,scheduled=(self[product]['amount'],self[product]['scheduled'])
+            wish,scheduled=self[product].values()
             if ((scheduled+wish)<amount):
                 self[product]["amount"]=amount-scheduled
             return True
@@ -42,22 +42,12 @@ class Tasklist(dict):
         while new_time in self:
             new_time+=1
         self[new_time]={'name':name,'image':image,'job':job}
+
     def addProduct(self, product, setjob, gettime):
         if not product in self.products:
             self.products[product]=[]
         self.products[product].append({'setjob':setjob, 'gettime': gettime})
-    def setJob(self, product):
-        if product in self.products:
-            times=[]
-            for station in self.products[product]:
-                times.append(station['gettime']())
-            mintime=min(times)
-            idx=times.index(mintime)
-            return self.products[product][idx]['setjob']()
-        return 0
-    def reset(self,product):
-        print(f"resetting {product}:")
-        self.wishlist.pop(product)
+
     def checkWishes(self):
         joblist=[]
         for product,data in self.wishlist.items():
@@ -65,43 +55,6 @@ class Tasklist(dict):
                 joblist.append(product)
         for product in joblist:
             self.wishlist[product]['scheduled']+=self.setJob(product)
-    def removeWish(self, product, amount):
-        if product in self.wishlist:
-            self.wishlist[product]['amount']-=amount
-    def removeSchedule(self, product, amount):
-        if product in self.wishlist:
-            self.wishlist[product]['scheduled']-=amount
-            if self.wishlist[product]['scheduled']<0:
-                self.wishlist[product]['scheduled']=0
-            if self.wishlist[product]['scheduled']==0 and self.wishlist[product]['amount']==0:
-                self.wishlist.pop(product)
-    def printlist(self):
-        cur_time=int(time())
-        if not len(self):
-            print('no jobs scheduled')
-        for tasktime in sorted(self):
-            remaining_time=tasktime-cur_time
-            task=self[tasktime]
-            print(f"JOB: {task['name']} in {remaining_time} seconds")
-        print("\n")
-        self.checkWishes()
-        for product,data in self.wishlist.items():
-            print(f"WISH: {product} - {data}")
-    def run(self):
-        while self.running:
-            cls()
-            cur_time=int(time())
-            if self.busy:
-                print(f"busy: {self.task['name']}")
-            if not self.paused and len(self):
-                firsttask=sorted(self)[0]
-                if firsttask<=cur_time and not self.busy:
-                    task=self.pop(firsttask)
-                    self.busy=True
-                    task['job']()
-                    self.busy=False
-            self.printlist()
-            sleep(1)
 
     def find(self, name):
         list=[]
@@ -123,6 +76,61 @@ class Tasklist(dict):
     def getWishList(self):
         list=dict(sorted(self.wishlist.items(), key=lambda item: item[0]))
         return list
+
+    def setJob(self, product):
+        if product in self.products:
+            times=[]
+            for station in self.products[product]:
+                times.append(station['gettime']())
+            mintime=min(times)
+            idx=times.index(mintime)
+            return self.products[product][idx]['setjob']()
+        return 0
+
+    def reset(self,product):
+        print(f"resetting {product}:")
+        self.wishlist.pop(product)
+
+    def removeWish(self, product, amount):
+        if product in self.wishlist:
+            self.wishlist[product]['amount']-=amount
+
+    def removeSchedule(self, product, amount):
+        if product in self.wishlist:
+            self.wishlist[product]['scheduled']-=amount
+            if self.wishlist[product]['scheduled']<0:
+                self.wishlist[product]['scheduled']=0
+            if self.wishlist[product]['scheduled']==0 and self.wishlist[product]['amount']==0:
+                self.wishlist.pop(product)
+
+    def printlist(self):
+        cur_time=int(time())
+        if not len(self):
+            print('no jobs scheduled')
+        for tasktime in sorted(self):
+            remaining_time=tasktime-cur_time
+            task=self[tasktime]
+            print(f"JOB: {task['name']} in {remaining_time} seconds")
+        print("\n")
+        self.checkWishes()
+        for product,data in self.wishlist.items():
+            print(f"WISH: {product} - {data}")
+
+    def run(self):
+        while self.running:
+            cls()
+            cur_time=int(time())
+            if self.busy:
+                print(f"busy: {self.task['name']}")
+            if not self.paused and len(self):
+                firsttask=sorted(self)[0]
+                if firsttask<=cur_time and not self.busy:
+                    task=self.pop(firsttask)
+                    self.busy=True
+                    task['job']()
+                    self.busy=False
+            self.printlist()
+            sleep(1)
 
     @staticmethod
     def printtime(seconds):

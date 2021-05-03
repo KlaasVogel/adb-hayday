@@ -64,8 +64,8 @@ class OrdersFrame(LabelFrame):
     @staticmethod
     def clearDict(orders,data):
         deletelist=[]
-        for name in orders:
-            if name not in data:
+        for order in orders:
+            if order not in data:
                 deletelist.append(order)
         for order in deletelist:
             orders[order].destroy()

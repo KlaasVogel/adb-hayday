@@ -1,13 +1,13 @@
 {
   "crops": [
-    {"crop":"wheat",    "amount":3,"location":[  0, -3]},
-    {"crop":"corn",     "amount":4,"location":[ -3, -3]},
-    {"crop":"soy",      "amount":6,"location":[ -6, -3]},
-    {"crop":"sugarcane","amount":4,"location":[  3, -1]},
-    {"crop":"carrot",   "amount":4,"location":[-11, -6]},
+    {"crop":"wheat",    "amount":4,"location":[  0, -3]},
+    {"crop":"corn",     "amount":4,"location":[ -10,-3]},
+    {"crop":"soy",      "amount":6,"location":[ -1, -3]},
+    {"crop":"sugarcane","amount":5,"location":[  4, -1]},
+    {"crop":"carrot",   "amount":5,"location":[ -8, -4]},
     {"crop":"indigo",   "amount":4,"location":[-11,  9]},
     {"crop":"pumpkin",  "amount":4,"location":[-14,  8]},
-    {"crop":"cotton",   "amount":4,"location":[  8, -5]}
+    {"crop":"cotton",   "amount":5,"location":[  8, -5]}
   ],
   "trees": [
     {"fruit":"apple",    "amount":2, "location":[-13,-13]},
@@ -24,14 +24,15 @@
       {"animal":"sheep",   "amount":5, "location":[  4, 4]}
   ],
   "stations": [
-        {"station":"feed mill",   "location":[-3, 4]},
-        {"station":"feed mill",   "location":[-13, -13]},
-        {"station":"dairy",       "location":[-7, 8]},
-        {"station":"bakery",      "location":[3, 10]},
-        {"station":"bbq grill",   "location":[10, -2]},
-        {"station":"sugar mill",  "location":[-3, 14]},
-        {"station":"popcorn pot", "location":[-3, 10]},
-        {"station":"pie oven",    "location":[8, 3]},
-        {"station":"loom",        "location":[8,-8]}
+        {"station":"feed mill",     "location":[-3, 4]},
+        {"station":"feed mill",     "location":[-13, -13]},
+        {"station":"dairy",         "location":[-7, 8]},
+        {"station":"bakery",        "location":[3, 10]},
+        {"station":"bbq grill",     "location":[10, -2]},
+        {"station":"sugar mill",    "location":[-3, 14]},
+        {"station":"popcorn pot",   "location":[-3, 10]},
+        {"station":"pie oven",      "location":[8, 3]},
+        {"station":"loom",          "location":[8,-8]},
+        {"station":"sewing machine","location":[8,1]}
   ]
 }

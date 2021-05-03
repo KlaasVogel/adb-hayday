@@ -143,8 +143,8 @@ class Crop(HD):
             if len(fields):
                 dx,dy=self.scythe
                 self.tap_and_trace(fields,dx,dy)
-                if not self.check_cross():
-                    self.tasklist.removeWish(self.product,self.amount)
+                self.check_cross()
+                self.tasklist.removeWish(self.product,self.amount)
             self.tasklist.removeSchedule(self.product,self.amount)
             sleep(2)
             self.setWaittime(5) #set wait if error sowing

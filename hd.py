@@ -16,9 +16,9 @@ class TemplateLibrary(dict):
 
 class HD():
     # this needs to be placed inside of an update function to be able to change pictures while running
-    log=MyLogger('HD')
     home=None
     def __init__(self, device, tasklist, item):
+        self.log=MyLogger('HD')
         self.device=device
         self.tasklist=tasklist
         self.scheduled=False

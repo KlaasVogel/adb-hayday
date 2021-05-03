@@ -99,8 +99,13 @@ class Card():
             self.requests[product]=1
             self.tasklist.addWish(product)
         amount,scheduled=self.tasklist.getWish(product)
-        if self.requests[product]+amount<=0:
-            self.requests[product]+=1
+        if (scheduled+amount<self.request[product]):
+
+        if amount<=0:
+            if -amount >= self.request[product]:
+
+
+                self.requests[product]+=1
             self.tasklist.checkWish(product,self.requests[product])
     def reset(self):
         self.requests = {}
