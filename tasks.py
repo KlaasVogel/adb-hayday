@@ -1,6 +1,7 @@
 from time import time, sleep
 from pynput import keyboard
 from threading import Thread
+from logger import MyLogger, logging
 import os
 
 def cls():
@@ -14,7 +15,7 @@ class Wishlist(dict):
     def get(self,product):
         if product in self:
             amount=self[product].get("amount",0)
-            scheduled=self[product].get("amount",0)
+            scheduled=self[product].get("scheduled",0)
             return [amount,scheduled]
         return [0,0]
     def check(self,product,amount):
@@ -27,6 +28,7 @@ class Wishlist(dict):
 
 class Tasklist(dict):
     def __init__(self):
+        self.log=MyLogger('Tasklist', LOG_LEVEL=logging.INFO)
         self.busy=False
         self.running=False
         self.paused=False
@@ -37,7 +39,7 @@ class Tasklist(dict):
         self.checkWish=self.wishlist.check
 
     def addtask(self,waittime,name,image,job):
-        print(f'\n adding job for {name}')
+        self.log.info(f'\n adding job for {name}')
         new_time=int(time())+waittime*60
         while new_time in self:
             new_time+=1
@@ -51,10 +53,12 @@ class Tasklist(dict):
     def checkWishes(self):
         joblist=[]
         for product,data in self.wishlist.items():
-            if data['scheduled']-data['amount']<0:
+            if data['amount']>0:
                 joblist.append(product)
         for product in joblist:
-            self.wishlist[product]['scheduled']+=self.setJob(product)
+            scheduled=self.setJob(product)
+            self.wishlist[product]['scheduled']+=scheduled
+            self.wishlist[product]['amount']-=scheduled
 
     def find(self, name):
         list=[]
@@ -78,17 +82,26 @@ class Tasklist(dict):
         return list
 
     def setJob(self, product):
-        if product in self.products:
+        try:
+            if product not in self.products:
+                raise Exception("product is not listed")
             times=[]
             for station in self.products[product]:
-                times.append(station['gettime']())
+                time=station['gettime']()
+                if time:
+                    times.append(station['gettime']())
+            if not len(times):
+                raise Exception("No Station found for this product")
             mintime=min(times)
             idx=times.index(mintime)
             return self.products[product][idx]['setjob']()
-        return 0
+        except Exception as e:
+            self.log.error("Kan task niet uitvoeren")
+            self.log.error(e)
+            return 0
 
     def reset(self,product):
-        print(f"resetting {product}:")
+        self.log.info(f"resetting {product}:")
         self.wishlist.pop(product)
 
     def removeWish(self, product, amount):
@@ -106,22 +119,22 @@ class Tasklist(dict):
     def printlist(self):
         cur_time=int(time())
         if not len(self):
-            print('no jobs scheduled')
+            self.log.info('no jobs scheduled')
         for tasktime in sorted(self):
             remaining_time=tasktime-cur_time
             task=self[tasktime]
-            print(f"JOB: {task['name']} in {remaining_time} seconds")
-        print("\n")
-        self.checkWishes()
+            self.log.info(f"JOB: {task['name']} in {remaining_time} seconds")
+        self.log.info("\n")
+
         for product,data in self.wishlist.items():
-            print(f"WISH: {product} - {data}")
+            self.log.info(f"WISH: {product} - {data}")
 
     def run(self):
         while self.running:
-            cls()
+            # cls()
             cur_time=int(time())
-            if self.busy:
-                print(f"busy: {self.task['name']}")
+            # if self.busy:
+            #     self.log.info(f"busy: {self.task['name']}")
             if not self.paused and len(self):
                 firsttask=sorted(self)[0]
                 if firsttask<=cur_time and not self.busy:
@@ -129,8 +142,7 @@ class Tasklist(dict):
                     self.busy=True
                     task['job']()
                     self.busy=False
-            self.printlist()
-            sleep(1)
+            self.checkWishes()
 
     @staticmethod
     def printtime(seconds):

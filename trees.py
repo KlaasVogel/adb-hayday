@@ -76,6 +76,8 @@ class Tree(HD):
         self.tasklist.addtask(5,f'{self.name} - harvest: {self.product}' ,self.image, self.harvest)
 
     def getJobTime(self):
+        if not self.enabled:
+            return False
         waittime=self.getWaitTime()
         waittime+=self.jobs*self.growtime
         return waittime

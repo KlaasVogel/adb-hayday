@@ -115,8 +115,10 @@ class Station(HD):
         return 0
 
     def getTotalTime(self):
+        if not self.enabled:
+            return False
         self.log.debug(f"\n {self.name}: gettotaltime")
-        waittime=self.getWaitTime()+self.getJobTime()
+        waittime=self.getWaitTime()+self.getJobTime()+0.1
         self.log.debug(f"{self.name}: waittime: {waittime}")
         for product in self.queue:
             waittime+=self.products[product].cooktime
@@ -164,8 +166,6 @@ class Station(HD):
             self.device.tap(x,y)
             sleep(.2)
             self.check_cross()
-
-            self.tasklist.removeWish(product,amount)
             self.tasklist.removeSchedule(product,amount)
             self.remove_lowest(self.jobs)
             self.orderJobs()

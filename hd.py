@@ -3,8 +3,12 @@ from math import isclose
 from time import sleep, time
 from glob import glob
 from adb import Template
-from logger import MyLogger
+from logger import MyLogger,logging
 import json
+
+
+class HomeException(Exception):
+    pass
 
 class TemplateLibrary(dict):
     def __init__(self, filepath):
@@ -18,7 +22,7 @@ class HD():
     # this needs to be placed inside of an update function to be able to change pictures while running
     home=None
     def __init__(self, device, tasklist, item):
-        self.log=MyLogger('HD')
+        self.log=MyLogger('HD', LOG_LEVEL=logging.INFO)
         self.device=device
         self.tasklist=tasklist
         self.scheduled=False

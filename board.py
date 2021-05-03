@@ -94,20 +94,22 @@ class Card():
         self.tasklist=tasklist
         self.location = location
         self.requests = {}
+
     def add(self,product):
         if product not in self.requests:
             self.requests[product]=1
             self.tasklist.addWish(product)
-        amount,scheduled=self.tasklist.getWish(product)
-        if (scheduled+amount<self.request[product]):
 
-        if amount<=0:
-            if -amount >= self.request[product]:
+        amount=self.requests[product]
+        wishes,scheduled=self.tasklist.getWish(product)
+        if (scheduled+wishes)<amount:
+            self.tasklist.checkWish(product,amount)
+            self.requests[product]+=1
 
-
-                self.requests[product]+=1
-            self.tasklist.checkWish(product,self.requests[product])
     def reset(self):
+        for product,amount in self.requests.items():
+            self.tasklist.removeWish(product,amount)
         self.requests = {}
+
     def __repr__(self):
         return "Cards:"+", ".join(self.requests)
