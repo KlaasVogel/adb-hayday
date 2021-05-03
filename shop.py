@@ -12,12 +12,13 @@ class Shop(HD):
 
     def checkItems(self):
         for product in self.products:
-            available=self.tasklist.getWish(product.name)
-            if available>=product.min_amount:
-                if self.tasklist.wishlist[product.name]["scheduled"]==0:
-                    self.tasklist.addtask(0.5, f'Start selling of {product.name}', self.image, product.sell)
-            else:
-                self.tasklist.addWish(product.name, product.min_amount-available)
+            wished,scheduled=self.tasklist.getWish(product.name)
+
+            # if available>=product.min_amount:
+            #     if self.tasklist.wishlist[product.name]["scheduled"]==0:
+            #         self.tasklist.addtask(0.5, f'Start selling of {product.name}', self.image, product.sell)
+            # else:
+            #     self.tasklist.addWish(product.name, product.min_amount-available)
         self.tasklist.addtask(10, f"checking for items to sell", self.image, self.checkItems)
 
 class ShopItem():

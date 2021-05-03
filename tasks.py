@@ -10,18 +10,14 @@ class Wishlist(dict):
     def add(self, product, amount=1):
         if not product in self:
             self[product]={"amount":0, "scheduled":0}
-        wishes, scheduled=self[product].values()
-        if wishes<0:
-            self[product]["amount"]=0
-        if (amount-scheduled)>0:
-            self[product]["amount"]+=(amount-scheduled)
-    def getWish(self,product):
+        self[product]['amount']+=amount
+    def get(self,product):
         if product in self:
             amount=self[product].get("amount",0)
             scheduled=self[product].get("amount",0)
-            return scheduled-amount
-        return 0
-    def checkWish(self,product,amount):
+            return [amount,scheduled]
+        return [0,0]
+    def check(self,product,amount):
         if product in self:
             wish,scheduled=(self[product]['amount'],self[product]['scheduled'])
             if ((scheduled+wish)<amount):
@@ -37,8 +33,8 @@ class Tasklist(dict):
         self.products={}
         self.wishlist=Wishlist()
         self.addWish=self.wishlist.add
-        self.getWish=self.wishlist.getWish
-        self.checkWish=self.wishlist.checkWish
+        self.getWish=self.wishlist.get
+        self.checkWish=self.wishlist.check
 
     def addtask(self,waittime,name,image,job):
         print(f'\n adding job for {name}')
@@ -107,6 +103,13 @@ class Tasklist(dict):
             self.printlist()
             sleep(1)
 
+    def find(self, name):
+        list=[]
+        for task in self.values():
+            if name in task['name']:
+                list.append(task['name'])
+        return list
+
     def getTaskList(self):
         data=[]
         if not len(self):
@@ -118,10 +121,8 @@ class Tasklist(dict):
         return data
 
     def getWishList(self):
-        data=[]
-        for product,details in self.wishlist.items():
-            data.append(f"{product} - {details}")
-        return sorted(data)
+        list=dict(sorted(self.wishlist.items(), key=lambda item: item[0]))
+        return list
 
     @staticmethod
     def printtime(seconds):

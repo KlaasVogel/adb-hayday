@@ -12,6 +12,6 @@
   "threshold_collect":0.98,"icon_collect":[-265,-185],"icon_feed":[-115,-285],"threshold_food":0.98 },
 
 "sheep": { "eattime":360, "wait":30, "product":"wool", "food":"sheep feed",
-  "threshold":0.75,"center_offset":[-30,75],"pencil_offset":[323,22],
+  "threshold":0.75,"center_offset":[-30,75],"pencil_offset":[305,22],
   "threshold_collect":0.9,"icon_collect":[-265,-185],"icon_feed":[-115,-285],"threshold_food":0.98 }
 }

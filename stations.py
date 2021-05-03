@@ -41,9 +41,8 @@ class Stations(dict):
                         num_recipes=len(data['recipes'])
                         icons=self.icons[num_recipes]
                         data['icons']=dict(zip(products,icons))
-
                         if name not in self:
-                            self[name]=Station(self.device, self.tasklist, station )
+                            self[name]=Station(self.device, self.tasklist, station)
                         data['name']=name
                         data['enabled']=True
                         data['position']=HD.getPos(newstation['location'])
@@ -56,8 +55,9 @@ class Stations(dict):
     def getList(self):
         data=[]
         for name,station in self.items():
+            tasks=self.tasklist.find(name)
             totaltime=self.tasklist.printtime(int(station.getTotalTime()*60))
-            data.append({"name":name, "jobs": len(station.jobs), "time":totaltime, "queue":station.queue})
+            data.append({"name":name, "jobs": len(station.jobs), "time":totaltime, "queue":station.queue, "tasks":tasks})
         return data
 
 class Station(HD):
@@ -86,7 +86,7 @@ class Station(HD):
         self.log.debug(f"\n {self.name}: getjobtime")
         self.log.debug(f"jobs: {self.jobs}")
         if len(self.jobs):
-            waittime=self.jobs[-1]-int(time())
+            waittime=max(self.jobs)-int(time())
             self.log.debug(f"waittime: {waittime}")
             if waittime > 0:
                 wait=int(waittime/60)
@@ -120,7 +120,7 @@ class Station(HD):
             product=self.queue.pop(0)
             self.log.debug(f"new job: {product} - jobs: {self.queue}")
             self.setWaittime(wait)
-            self.tasklist.addtask(wait, f"create: {product}", self.image, self.products[product].create)
+            self.tasklist.addtask(wait, f"{self.name} - create: {product}", self.image, self.products[product].create)
             self.jobs.append(wait*60+int(time()))
             self.log.debug(self.jobs)
             for job in self.jobs:
@@ -142,11 +142,11 @@ class Station(HD):
                     self.jobs.pop(0)
                     self.orderJobs()
                 else:
-                    self.tasklist.addtask(5, product, f'collect: {product}', self.products[product].start_collect)
+                    self.tasklist.addtask(5, product, f'{self.name} - collect: {product}', self.products[product].start_collect)
             self.checkJobs()
             self.move_from()
         else:
-            self.tasklist.addtask(1, f"retry to collect: {product}", self.image, self.products[product].start_collect)
+            self.tasklist.addtask(1, f"{self.name} - retry to collect: {product}", self.image, self.products[product].start_collect)
 
     def start(self,product,cooktime):
         icon=self.icons[product]
@@ -163,7 +163,7 @@ class Station(HD):
                 x,y=location
                 self.device.tap(x,y)
                 sleep(.5)
-                self.log.debug(f"should be ostationed now")
+                self.log.debug(f"should be open now")
                 info_button=self.device.locate_item(self.info, 0.85, one=True)
                 if len(info_button):
                     bas=np.add(info_button,self.base)
@@ -176,7 +176,6 @@ class Station(HD):
                         for ingredient,amount in recipe.ingredients.items():
                             if self.onscreen(ingredient):
                                 self.log.debug(f"Request: {ingredient}")
-                                sleep(2)
                                 self.tasklist.checkWish(ingredient, amount)
                         self.setWaittime(2)
                         recipe.addJob(error=True)
@@ -185,7 +184,7 @@ class Station(HD):
                     self.setWaittime(0)
                     jobtime=self.getJobTime()+cooktime
                     self.log.debug(f"new jobtime: {jobtime}")
-                    self.tasklist.addtask(jobtime+0.5, f'collect {product}', self.image, recipe.start_collect)
+                    self.tasklist.addtask(jobtime+0.5, f'{self.name} - collect: {product}', self.image, recipe.start_collect)
                     self.jobs.append(jobtime*60+int(time()))
                     self.log.debug(f"jobs: {self.jobs}")
                     sleep(5)
@@ -195,7 +194,7 @@ class Station(HD):
         self.log.debug('something went wrong')
         sleep(0.3)
         self.exit(x,y)
-        self.tasklist.addtask(1, f'{self.name}: create {product}', self.image, recipe.create)
+        self.tasklist.addtask(1, f'{self.name} - create: {product}', self.image, recipe.create)
 
     def exit(self,x,y):
         self.device.tap(x-80,y-40)

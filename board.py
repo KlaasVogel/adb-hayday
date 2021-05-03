@@ -48,11 +48,8 @@ class Board(HD):
         return self.cards[idx]
 
     def collect(self, location):
-        # x,y = location
         card=self.getCard(location)
-        print(card)
         self.device.tap(*location)
-        # x,y=self.icon
         self.device.tap(*self.car)
         card.reset()
 
@@ -96,12 +93,16 @@ class Card():
     def __init__(self,tasklist, location):
         self.tasklist=tasklist
         self.location = location
-        self.requests = []
+        self.requests = {}
     def add(self,product):
         if product not in self.requests:
-            self.requests.append(product)
-        self.tasklist.addWish(product)
+            self.requests[product]=1
+            self.tasklist.addWish(product)
+        amount,scheduled=self.tasklist.getWish(product)
+        if self.requests[product]+amount<=0:
+            self.requests[product]+=1
+            self.tasklist.checkWish(product,self.requests[product])
     def reset(self):
-        self.requests = []
+        self.requests = {}
     def __repr__(self):
         return "Cards:"+", ".join(self.requests)

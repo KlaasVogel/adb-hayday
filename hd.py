@@ -30,7 +30,7 @@ class HD():
         print(self.home)
 
     def loadImages(self):
-        for name in ['home', 'cross', 'ínfo', 'plus', 'grass', 'diamond', 'again', 'arrows', 'cont']:
+        for name in ['home', 'cross', 'info', 'plus', 'grass', 'diamond', 'again', 'arrows', 'cont']:
             setattr(self,name,self.loadTemplates('base',name))
 
     @staticmethod

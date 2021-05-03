@@ -2,7 +2,7 @@ import logging
 from logging import handlers
 
 class MyLogger(object):
-    def __init__(self, name, LOG_LEVEL=logging.DEBUG):
+    def __init__(self, name, LOG_LEVEL=logging.INFO):
 
         self.log_level = LOG_LEVEL
         # create logger

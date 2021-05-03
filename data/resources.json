@@ -2,8 +2,8 @@
   "crops": [
     {"crop":"wheat",    "amount":3,"location":[  0, -3]},
     {"crop":"corn",     "amount":4,"location":[ -3, -3]},
-    {"crop":"soy",      "amount":8,"location":[ -6, -3]},
-    {"crop":"sugarcane","amount":3,"location":[  3, -1]},
+    {"crop":"soy",      "amount":6,"location":[ -6, -3]},
+    {"crop":"sugarcane","amount":4,"location":[  3, -1]},
     {"crop":"carrot",   "amount":4,"location":[-11, -6]},
     {"crop":"indigo",   "amount":4,"location":[-11,  9]},
     {"crop":"pumpkin",  "amount":4,"location":[-14,  8]},

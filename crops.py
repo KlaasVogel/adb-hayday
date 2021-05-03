@@ -38,8 +38,6 @@ class Crops(dict):
                         data=self.settings[crop]
                         data['enabled']=True
                         data['position']=HD.getPos(newcrop['location'])
-                        data['temp_full']=HD.loadTemplates('crops',crop)
-                        data['temp_empty']=HD.loadTemplates('crops',f"empty_{data['field']}*")
                         data['temp_switch']=self.switch_template
                         data['amount']=newcrop['amount']
                         data['update']=self.updateListData
@@ -53,7 +51,19 @@ class Crop(HD):
         self.switch=[-485,120]
         self.scythe=[-190,-80]
         self.enabled=True
+        self.filelist_full=[]
+        self.filelist_empty=[]
         self.tasklist.addProduct(self.product, self.addJob, self.getJobTime)
+
+    def checkTemplates(self):
+        filelist_full=glob(path.join('images','crops',f"{self.product}*"))
+        filelist_empty=glob(path.join('images','crops',f"empty_{self.field}*"))
+        if filelist_full!=self.filelist_full:
+            self.temp_full=HD.loadTemplates('crops',self.product)
+            self.filelist_full=filelist_full
+        if filelist_empty!=self.filelist_empty:
+            self.filelist_empty=filelist_empty
+            self.temp_empty=HD.loadTemplates('crops',f"empty_{self.field}*")
 
     def getJobTime(self):
         waittime=self.getWaitTime()
@@ -89,6 +99,7 @@ class Crop(HD):
         return [x2,y2]
 
     def sow(self,fields):
+        self.checkTemplates()
         x,y=fields[0] if len(fields) else [800,450]
         print('sowing')
         empty_fields=self.device.locate_item(self.temp_empty, .9)
@@ -124,6 +135,7 @@ class Crop(HD):
             self.setWaittime(self.growtime+0.5)
 
     def harvest(self):
+        self.checkTemplates()
         if self.reset_screen():
             self.move_to()
             print(f'harvesting: {self.product}')
