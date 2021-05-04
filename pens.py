@@ -107,7 +107,7 @@ class Pen(HD):
             # self.tasklist.reset(self.product)
 
     def checkFood(self):
-        self.tasklist.checkWish(self.food, self.amount)
+        self.tasklist.resetWish(self.food, self.amount)
 
     def exit(self):
         x,y=self.center
@@ -152,7 +152,7 @@ class Pen(HD):
             theta+=pi/4
             if (theta > pi*0.9):
                 theta=0
-                r+=15/steps
+                r+=25/steps
 
     def checkMissingFood(self):
         wait=10
@@ -185,8 +185,8 @@ class Pen(HD):
             self.checkFood()
             return True
         except Exception as e:
-            self.log.error(self.name)
-            self.log(e)
+            self.log.error(f"{self.name}")
+            self.log.error(e)
             return False
 
     def collect(self):

@@ -31,7 +31,7 @@ class Stations(dict):
             if resources['stations']==self.data and settings==self.settings:
                 return
 
-            self.log.info("updating stations")
+            self.log.debug("updating stations")
             self.data=resources['stations']
             self.settings=settings
             self.updateListData()
@@ -45,7 +45,7 @@ class Stations(dict):
                 station.enabled=False
             for newstation in self.data:
                 station=newstation['station']
-                self.log.info(station)
+                self.log.debug(station)
                 if station not in count:
                     count[station]=0
                 count[station]+=1
@@ -97,7 +97,7 @@ class Station(HD):
             list.pop(idx)
 
     def setRecipes(self):
-        self.log.info(f"set recipes ({len(self.recipes)})")
+        self.log.debug(f"set recipes ({len(self.recipes)})")
         for product,recipe in self.recipes.items():
             self.products[product]=Recipe(self,product,recipe)
 
@@ -140,7 +140,7 @@ class Station(HD):
         if len(self.queue) and len(self.jobs)<2:
             self.log.debug('adding task')
             product=self.queue.pop(0)
-            self.log.info(f"{self.name} new job: {product} - jobs: {self.queue}")
+            self.log.debug(f"{self.name} new job: {product} - jobs: {self.queue}")
             self.setWaittime(wait)
             self.tasklist.addtask(wait, f"{self.name} - create: {product}", self.image, self.products[product].create)
             self.jobs.append(wait*60+int(time()))
@@ -151,7 +151,7 @@ class Station(HD):
     def collect(self,product,amount=1):
         x,y=[800,450]
         try:
-            self.log.info(f"{self.name} collect {product}")
+            self.log.debug(f"{self.name} collect {product}")
             if not self.reset_screen():
                 raise Exception("Error on resetting Screen")
 
@@ -172,16 +172,16 @@ class Station(HD):
             self.checkJobs()
         except Exception as e:
             self.log.error(f"Could not collect {product}")
-            self.log(e)
+            self.log.error(e)
             info=f"{self.name} - retry to collect: {product}"
-            self.log.info(info)
+            self.log.debug(info)
             self.tasklist.addtask(1,info, self.image, self.products[product].start_collect)
         finally:
             self.exit(x,y)
 
     def start(self,product,cooktime):
         try:
-            self.log.info(f"{self.name} start {product}")
+            self.log.debug(f"{self.name} start {product}")
             icon=self.icons[product]
             recipe=self.products[product]
             x,y=[0,0]
@@ -212,7 +212,7 @@ class Station(HD):
             sleep(.1)
 
             if self.check_cross(): #could not find ingredients, wait 2 minutes
-                self.log.info('not enough ingredients')
+                self.log.debug('not enough ingredients')
                 list=[]
                 for ingredient in recipe.ingredients:
                     if self.onscreen(ingredient):
@@ -230,7 +230,7 @@ class Station(HD):
             jobtime=self.getJobTime()+cooktime
             self.log.debug(f"new jobtime: {jobtime}")
             info=f'{self.name} - collect: {product}'
-            self.log.info(info)
+            self.log.debug(info)
             self.tasklist.addtask(jobtime+0.5, info, self.image, recipe.start_collect)
             self.jobs.append(jobtime*60+int(time()))
             self.log.debug(f"jobs: {self.jobs}")
@@ -238,7 +238,7 @@ class Station(HD):
             #something went wrong, try again in one minute
             self.log.error('something went wrong')
             self.log.error(e)
-            self.log.info('retry in 1 minute')
+            self.log.debug('retry in 1 minute')
             self.tasklist.addtask(1, f'{self.name} - create: {product}', self.image, recipe.create)
         finally:
             self.exit(x,y)

@@ -25,6 +25,12 @@ class Wishlist(dict):
                 self[product]["amount"]=amount-scheduled
             return True
         self.add(product,amount)
+    def reset(self,product,amount):
+        if product in self:
+            wish,scheduled=self[product].values()
+            self[product]["amount"]=amount-scheduled if scheduled<amount else 0
+            return
+        self.add(product,amount)
 
 class Tasklist(dict):
     def __init__(self):
@@ -37,15 +43,18 @@ class Tasklist(dict):
         self.addWish=self.wishlist.add
         self.getWish=self.wishlist.get
         self.checkWish=self.wishlist.check
+        self.resetWish=self.wishlist.reset
+
 
     def addtask(self,waittime,name,image,job):
-        self.log.info(f'\n adding job for {name}')
+        self.log.debug(f'\n adding job for {name}')
         new_time=int(time())+waittime*60
         while new_time in self:
             new_time+=1
         self[new_time]={'name':name,'image':image,'job':job}
 
     def addProduct(self, product, setjob, gettime):
+        self.log.debug(f"adding product: {product}")
         if not product in self.products:
             self.products[product]=[]
         self.products[product].append({'setjob':setjob, 'gettime': gettime})
@@ -83,6 +92,7 @@ class Tasklist(dict):
 
     def setJob(self, product):
         try:
+            self.log.debug(f'product: {product}')
             if product not in self.products:
                 raise Exception("product is not listed")
             times=[]
@@ -96,12 +106,11 @@ class Tasklist(dict):
             idx=times.index(mintime)
             return self.products[product][idx]['setjob']()
         except Exception as e:
-            self.log.error("Kan task niet uitvoeren")
-            self.log.error(e)
+            self.log.debug(e)
             return 0
 
     def reset(self,product):
-        self.log.info(f"resetting {product}:")
+        self.log.debug(f"resetting {product}:")
         self.wishlist.pop(product)
 
     def removeWish(self, product, amount):
@@ -119,22 +128,22 @@ class Tasklist(dict):
     def printlist(self):
         cur_time=int(time())
         if not len(self):
-            self.log.info('no jobs scheduled')
+            self.log.debug('no jobs scheduled')
         for tasktime in sorted(self):
             remaining_time=tasktime-cur_time
             task=self[tasktime]
-            self.log.info(f"JOB: {task['name']} in {remaining_time} seconds")
-        self.log.info("\n")
+            self.log.debug(f"JOB: {task['name']} in {remaining_time} seconds")
+        self.log.debug("\n")
 
         for product,data in self.wishlist.items():
-            self.log.info(f"WISH: {product} - {data}")
+            self.log.debug(f"WISH: {product} - {data}")
 
     def run(self):
         while self.running:
             # cls()
             cur_time=int(time())
             # if self.busy:
-            #     self.log.info(f"busy: {self.task['name']}")
+            #     self.log.debug(f"busy: {self.task['name']}")
             if not self.paused and len(self):
                 firsttask=sorted(self)[0]
                 if firsttask<=cur_time and not self.busy:

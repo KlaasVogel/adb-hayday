@@ -31,7 +31,6 @@ class HD():
         self.jobs=0
         self.waiting=0
         self.loadImages()
-        print(self.home)
 
     def loadImages(self):
         for name in ['home', 'cross', 'info', 'plus', 'grass', 'diamond', 'again', 'arrows', 'cont']:
@@ -61,6 +60,14 @@ class HD():
         return list
 
     @staticmethod
+    def loadTemplateMap(map,product):
+        list=[]
+        filelist=glob(path.join(getcwd(),'images', map, product, '*.png'))
+        for file in filelist:
+            list.append(Template(file))
+        return list
+
+    @staticmethod
     def setData(item, data):
         for key, value in data.items():
             setattr(item, key, value)
@@ -68,8 +75,8 @@ class HD():
     @staticmethod
     def getPos(location):
         x,y=location
-        pos_x=40*x-40*y
-        pos_y=-20*x-20*y
+        pos_x=(47*x-47*y)
+        pos_y=int(-23.5*x-23.5*y)
         return [pos_x, pos_y]
 
     #return time in minutes
@@ -84,6 +91,7 @@ class HD():
         self.waiting=int(time()+wait*60)
 
     def move_to(self):
+        self.log.debug(f'moving to location: {self.position}')
         pos_x,pos_y=self.position
         self.device.move(pos_x, pos_y)
         sleep(.2)
@@ -170,11 +178,11 @@ class HD():
             self.check_lvl_up()
             if not self.check_cross():
                 for x in range(4):
-                    self.device.swipe(1300,150,200,700,100)
+                    self.device.swipe(200,150,1000,600,100)
                 self.check_cross()
                 self.device.zoom_out()
                 self.check_cross()
-                self.device.swipe(800,600,1000,450,400)
+                self.device.swipe(1000,600,500,450,400)
             locations=self.check_home()
             count+=1
             self.loadImages()
