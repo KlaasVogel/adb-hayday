@@ -1,8 +1,11 @@
 from hd import HD
 from time import sleep
+from os import path
+from logger import MyLogger, logging
 
 class Trees(dict):
     def __init__(self, device, tasklist):
+        self.log=MyLogger('TREES', LOG_LEVEL=logging.INFO)
         self.device=device
         self.tasklist=tasklist
         self.data=[]
@@ -10,10 +13,12 @@ class Trees(dict):
         self.updateListData()
 
     def updateListData(self):
+        self.log.debug('updating data')
         settings=HD.loadJSON('trees')
         resources=HD.loadJSON('resources')
         count={}
         if len(resources) and "trees" in resources and len(settings):
+            self.log.debug('data is valid')
             if resources['trees']!=self.data or settings!=self.settings:
                 self.data=resources['trees']
                 self.settings=settings
@@ -21,19 +26,23 @@ class Trees(dict):
                     fruit.enabled=False
                 for newfruit in self.data:
                     fruit=newfruit['fruit']
+                    self.log.debug(f'fruit: {fruit}')
                     if fruit not in count:
                         count[fruit]=0
                     count[fruit]+=1
+                    self.log.debug(f"amount: {newfruit['amount']}")
                     for i in range(newfruit['amount']):
                         name=f"{fruit} [{count[fruit]}-{i}]"
+                        self.log.debug(f"name: {name}")
                         if fruit in self.settings:
                             if name not in self:
                                 self[name]=Tree(self.device, self.tasklist, fruit)
-                            data=self.settings[fruit]
+                            data=self.settings[fruit].copy()
+                            data['log']=self.log
                             data['name']=name
                             data['enabled']=True
-                            data['position']=HD.getPos(newfruit['location'])
-                            data['templates']=HD.loadTemplates('trees',fruit)
+                            data['position']=self.device.getPos(newfruit['location'])
+                            data['templates']=HD.loadTemplateMap('trees',fruit)
                             data['update']=self.updateListData
                             for key,value in data.items():
                                 setattr(self[name], key, value)
@@ -50,7 +59,9 @@ class Tree(HD):
         self.update()
         if not self.enabled:
             return
-        if self.reset_screen():
+        try:
+            if not self.reset_screen():
+                raise Exception("could not reset screen")
             self.move_to()
             self.tasklist.removeSchedule(self.product,self.times)
             tree=self.device.locate_item(self.templates, threshold=self.threshold, one=True)
@@ -59,6 +70,8 @@ class Tree(HD):
                 self.setWaittime(60)
                 self.scheduled=False
                 return
+            self.device.center(tree)
+            tree=self.device.locate_item(self.templates, threshold=self.threshold, one=True)
             x,y=tree
             dx,dy=self.icon
             self.device.tap(x,y)
@@ -72,11 +85,16 @@ class Tree(HD):
                 self.scheduled=False
                 return
             self.setWaittime(5)
-        print("something went wrong....resetting")
-        self.tasklist.addtask(5,f'{self.name} - harvest: {self.product}' ,self.image, self.harvest)
+        except Exception as e:
+            self.log.error("something went wrong....resetting")
+            self.tasklist.addtask(5,f'{self.name} - harvest: {self.product}' ,self.image, self.harvest)
+        finally:
+            self.move_from()
 
     def getJobTime(self):
-        waittime=self.getWaitTime()
+        if not self.enabled:
+            return False
+        waittime=self.getWaitTime()+0.05
         waittime+=self.jobs*self.growtime
         return waittime
 

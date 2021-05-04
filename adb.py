@@ -4,6 +4,7 @@ from time import sleep
 import cv2
 import numpy as np
 from ppadb.client import Client
+from logger import MyLogger, logging
 
 class Template():
     def __init__(self, template_file):
@@ -15,18 +16,18 @@ class Template():
             self.data= cv2.imread(template_file)
             self.h,self.w = self.data.shape[:-1]
             if "_C" in template_file:
-                # print("C")
+                # self.log.debug("C")
                 self.offset=[self.w/2,self.h/2]
             if "R_" in template_file:
-                # print("R")
+                # self.log.debug("R")
                 self.offset[0]=0
             if "L_" in template_file:
-                # print(f"L {self.w}")
+                # self.log.debug(f"L {self.w}")
                 self.offset[0]=self.w
             if "_T" in template_file:
-                # print("T")
+                # self.log.debug("T")
                 self.offset[1]=self.h
-        # print(self.offset)
+        # self.log.debug(self.offset)
     def __repr__(self):
         return f"Template({self.file}, offset={self.offset})"
 
@@ -53,14 +54,15 @@ class Adb_Device():
     output=ShowOutput()
     lastscreen=None
     def __init__(self):
+        self.log=MyLogger('ADB', LOG_LEVEL=logging.INFO)
         client=Client(host='127.0.0.1', port=5037)
-        print(client.version())
+        self.log.debug(client.version())
         devices = client.devices()
         if len(devices) == 0:
-            print("no devices")
+            self.log.debug("no devices")
             quit()
         self.device=devices[0]
-        print(f'updating info for {self.device}')
+        self.log.debug(f'updating info for {self.device}')
         number=5
         touch_id=0
         lines=self.device.shell('getevent -p').split("\n")
@@ -75,11 +77,10 @@ class Adb_Device():
                 for value in values:
                     if "max" in value:
                         self.max=int(value[4:])
-                        print(f"found max: {self.max}")
+                        self.log.debug(f"found max: {self.max}")
 
     @staticmethod
     def correct(list1,list2):
-        print('correct')
         newlist=[]
         dx=list2[0][0]-list1[0][0]
         dy=list2[0][1]-list1[0][1]
@@ -181,9 +182,11 @@ class Adb_Device():
         # self.device.shell(shellcmd)
 
     def move(self, x, y):
-        print('moving')
-        border_x=self.res_x*500/1600
-        border_y=self.res_y*300/900
+        self.log.debug('moving')
+        border_x=self.scale_X(500)
+        border_y=self.scale_Y(300)
+        center_x=self.scale_X(800)
+        center_y=self.scale_Y(450)
         while (x or y):
             if x<0:
                 dx=x if x>-border_x else -border_x
@@ -193,13 +196,16 @@ class Adb_Device():
                 dy=y if y>-border_y else -border_y
             else:
                 dy=y if y<border_y else border_y
-            self.swipe(self.res_x/2+dx,self.res_y/2+dy, 800, 450, 500)
+            self.swipe(self.res_x/2+dx,self.res_y/2+dy, center_x, center_y, 500)
             x=x-dx
             y=y-dy
 
     def swipe(self, x1, y1, x2, y2, speed=300):
         self.device.shell(f'input swipe {x1} {y1} {x2} {y2} {speed}')
         sleep(.3)
+
+    def center(self,x,y):
+        self.swipe(x,y,self.res_x/2, self.res_y/2, 500)
 
     def load_screen_img(self):
         screenshot_file=path.join('images','screen.png')
@@ -228,9 +234,9 @@ class Adb_Device():
         if len(template.data):
             result = cv2.matchTemplate(img, template.data, cv2.TM_CCOEFF_NORMED)
             max=np.max(result)
-            # print(template.file)
-            # print(f"offset: {template.offset}")
-            # print(f"max: {max}")
+            # self.log.debug(template.file)
+            # self.log.debug(f"offset: {template.offset}")
+            # self.log.debug(f"max: {max}")
             if (max>=threshold):
                 min=max-margin if (max-margin >= threshold) else threshold
                 loc=np.where(result >= min)
@@ -244,6 +250,24 @@ class Adb_Device():
                 list.append(name)
         return list
 
+
+    #calculate new x or y, if device has an other resolution than 1600:900
+    def scale_X(self,x):
+        return x*self.res_x/1600
+
+    def scale_Y(self,y):
+        return y*self.res_y/900
+
+    #calculate a new location based on location and the given vector
+    #vector[x,y]=[0,1]=NE  -> -X (screen) and -Y (screen)
+    #vector[1] positive = NW  -> dx = positive, dy= negative
+    def getPos(self, vector, location=[0,0], multiplier=1):
+        x,y=location
+        dx=int(self.scale_X(47)*(vector[0]-vector[1])*multiplier)
+        dy=int(self.scale_Y(23.5)*-(vector[0]+vector[1])*multiplier)
+        return[x+dx, y+dy]
+
+    #get color of pixel on this location
     def getColor(self,location):
         x,y=location
         img=self.lastscreen
@@ -256,15 +280,15 @@ class Adb_Device():
         img_result=img_base
         loclist=[]
         for template in templates:
-            # print(template)
+            self.log.debug(template)
             loc=self.get_match(template, img_base, threshold, margin)
             if len(loc) and len(loc[0]):
                 for pt in zip(*loc[::-1]):  # Switch collumns and rows
                     cv2.rectangle(img_result, pt, (pt[0] + template.w, pt[1] + template.h), (0, 0, 255), 2)
                     x,y=np.add(pt,template.offset).astype(int)
                     if not self.checkClose(x,y,loclist,*offset):
-                        # print(f"found on {x},{y} ")
-                        # print(f"point={pt}")
+                        self.log.debug(f"found on {x},{y} ")
+                        self.log.debug(f"point={pt}")
                         cv2.rectangle(img_result, pt, (pt[0] + template.w, pt[1] + template.h), (255, 0, 255), 2)
                         loclist.append([x,y])
                 for vector in loclist:

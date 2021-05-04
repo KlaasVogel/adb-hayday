@@ -3,7 +3,7 @@ from trees import Trees
 from crops import Crops
 from stations import Stations
 from pens import Pens
-from shop import Shop
+# from shop import Shop
 from tasks import Tasklist
 from adb import Adb_Device, ShowOutput
 from tkinter import Tk, Frame
@@ -19,15 +19,15 @@ class MainApp(Tk):
         self.buttons=Buttons(self, start=self.tl.start, pause= self.tl.hold, stop=self.tl.stop, capture=self.device.printScreen)
         self.buttons.grid(row=2,column=1)
         self.tasks=TaskListFrame(self, self.tl.getTaskList)
-        self.tasks.grid(row=3, column=1)
+        self.tasks.grid(row=3, column=1, sticky='n')
         self.orders=OrdersFrame(self, self.tl.getWishList)
-        self.orders.grid(row=3, column=2)
+        self.orders.grid(row=3, column=2, sticky='n')
 
         self.stations=Stations(self.device, self.tl)
         self.stationFrame=StationFrame(self, self.stations.getList)
-        self.stationFrame.grid(row=3, column=3)
+        self.stationFrame.grid(row=3, column=3, sticky='n')
 
-        self.shop=Shop(self.device, self.tl)
+        # self.shop=Shop(self.device, self.tl)
         self.trees=Trees(self.device, self.tl)
         self.crops=Crops(self.device, self.tl)
         self.pens=Pens(self.device, self.tl)

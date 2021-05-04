@@ -7,11 +7,13 @@ from adb import Template
 import numpy as np
 import math
 from math import sin, cos, pi
+from logger import MyLogger, logging
 
 class Pens(dict):
     device=None
     tasklist=None
     def __init__(self, device, tasklist):
+        self.log=MyLogger('Pens', LOG_LEVEL=logging.INFO)
         self.device=device
         self.tasklist=tasklist
         self.data=[]
@@ -40,6 +42,7 @@ class Pens(dict):
                         if name not in self:
                             self[name]=Pen(self.device, self.tasklist, animal, product)
                         data['name']=name
+                        data['log']=self.log
                         data['enabled']=True
                         data['position']=HD.getPos(newpen['location'])
                         data['temp_pen']=HD.loadTemplates('pens',animal)
@@ -61,8 +64,10 @@ class Pen(HD):
         # self.tasklist.addtask(0.05, self.animal, self.image, self.collect)
 
     def getJobTime(self):
+        if not self.enabled:
+            return False
         waittime=self.getWaitTime()
-        waittime+=self.jobs*self.eattime
+        waittime+=self.jobs*self.eattime+0.1
         return waittime
 
     def addJob(self):
@@ -72,27 +77,27 @@ class Pen(HD):
         return self.amount
 
     def checkCollected(self):
-        print(f"checking if all {self.product} is collected")
+        self.log.debug(f"checking if all {self.product} is collected")
         result=self.device.locate_item(self.temp_collect, self.threshold_collect)
         if len(result):
-            print('not collected')
+            self.log.debug('not collected')
             return False
         return True
 
     def checkFed(self):
-        print(f"checking if all {self.animal} are fed")
+        self.log.debug(f"checking if all {self.animal} are fed")
         result=self.device.locate_item(self.temp_food, self.threshold_food)
         if len(result):
-            print('not fed')
+            self.log.debug('not fed')
             return False
         return True
 
     def checkJobs(self):
-        print(f"checking jobs for {self.product}")
+        self.log.debug(f"checking jobs for {self.product}")
         wait=self.getWaitTime()+0.2
         if not self.scheduled:
             if self.jobs>0 :
-                print('adding task')
+                self.log.debug('adding task')
                 self.jobs+=-1
                 self.setWaittime(wait)
                 self.tasklist.addtask(wait, f"collect: {self.product}", self.image, self.collect)
@@ -102,7 +107,7 @@ class Pen(HD):
             # self.tasklist.reset(self.product)
 
     def checkFood(self):
-        self.tasklist.checkWish(self.food, self.amount)
+        self.tasklist.resetWish(self.food, self.amount)
 
     def exit(self):
         x,y=self.center
@@ -110,7 +115,7 @@ class Pen(HD):
         self.move_from()
 
     def locate_pen(self):
-        print("move to Pen")
+        self.log.debug("move to Pen")
         if self.reset_screen():
             self.move_to()
             location=self.device.locate_item(self.temp_pen, self.threshold, one=True)
@@ -147,65 +152,70 @@ class Pen(HD):
             theta+=pi/4
             if (theta > pi*0.9):
                 theta=0
-                r+=15/steps
+                r+=25/steps
 
     def checkMissingFood(self):
         wait=10
         if self.check_cross():
             self.setWaittime(10)
-            print(f"Missing Food. retry in {wait} minutes")
+            self.log.debug(f"Missing Food. retry in {wait} minutes")
             self.checkFood()
             self.tasklist.addtask(wait+.2, f'Try Feeding {self.animal}', self.image, self.feed)
             return True
         return False
 
     def feed(self,atsite=False):
-        print('feeding')
-        self.update()
-        if not self.enabled:
-            return
-        if atsite or self.locate_pen():
+        try:
+            self.log.debug('feeding')
+            self.update()
+            if not self.enabled:
+                return False
+            if not (atsite or self.locate_pen()):
+                raise Exception("Could not locate pen")
+            self.setWaittime(10)
             if atsite:
                 self.execute(self.checkFed,self.icon_feed,steps=1)
                 if self.checkMissingFood():
-                    self.exit()
-                    return False
+                    raise Exception("No Food available")
             if not self.checkFed():
-                print("Not all animals are fed.")
+                self.log.debug("Not all animals are fed.")
                 self.execute(self.checkFed,self.icon_feed,steps=3)
                 if self.checkMissingFood():
-                    self.exit()
-                    return False
+                    raise Exception("No Food available")
             self.checkFood()
-            self.setWaittime(self.eattime)
-            self.scheduled=False
-            self.checkJobs()
-            self.exit()
             return True
-        print('something went wrong')
-        self.exit()
-        self.tasklist.addtask(1, f"Feed: {self.animal}", self.image, self.feed)
-        return False
+        except Exception as e:
+            self.log.error(f"{self.name}")
+            self.log.error(e)
+            return False
 
     def collect(self):
-        print(f'collecting: {self.product}')
-        self.update()
-        if not self.enabled:
-            return
-        if self.locate_pen():
-            self.tasklist.removeSchedule(self.product,self.amount)
+        try:
+            self.log.debug(f'collecting: {self.product}')
+            self.update()
+            if not self.enabled:
+                return False
+            if not self.locate_pen():
+                raise Exception(f"Could not locate {self.name}")
+            if self.checkCollected():
+                self.setWaittime(10)
+                self.feed(True)
+                raise Exception(f"Already Collected or not Fed")
             self.execute(self.checkCollected,self.icon_collect)
-            self.tasklist.removeWish(self.product,self.amount)
             self.setWaittime(5)
             if self.check_cross():
-                print("Barn is full, need to sell something")
-                print("retry in 5 minutes")
-                self.tasklist.addtask(5, self.animal, self.image, self.collect)
-                self.exit()
-                return
-            print("Collection succesfull")
-            self.feed(True)
-            return
-
-        print('something went wrong')
-        self.tasklist.addtask(1, self.animal, self.image, self.collect)
+                raise Exception("Barn is full, need to sell something")
+            self.tasklist.removeSchedule(self.product,self.amount)
+            self.log.debug("Collection succesfull")
+            self.setWaittime(10)
+            if self.feed(True):
+                self.setWaittime(self.eattime)
+            self.scheduled=False
+            self.checkJobs()
+        except Exception as e:
+            self.log.error(f"Fout in {self.name}")
+            self.log.error(e)
+            self.log.debug("retry in 5 minutes")
+            self.tasklist.addtask(5, self.animal, self.image, self.collect)
+        finally:
+            self.exit()

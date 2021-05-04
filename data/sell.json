@@ -1,0 +1,5 @@
+{
+  "wheat":{"minimum": 10, "maximum": 50, "amount":10, "price":"min", "order":false}
+  "carrot":{"minimum": 10, "maximum": 50, "amount":10, "price":"normal", "order":false}
+  "egg":{"minimum": 10, "maximum": 50, "amount":10, "price":"max", "order":false}
+}
